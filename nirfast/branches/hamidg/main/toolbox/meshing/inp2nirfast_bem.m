@@ -1,19 +1,18 @@
-function inp2nirfast_bem(fnprefix,saveloc,type)
+function inp2nirfast_bem(fnprefix,saveloc,source_coord_fn)
 
-% inp2nirfast_bem(fnprefix,saveloc,type)
+% inp2nirfast_bem(fnprefix,saveloc,source_coord_fn)
 %
 % Converts inp files to a nirfast bem mesh
 %
-% fnprefix is the prefix  of the inp files ('fnprefix1.inp or
-% fnprefix_2.inp or ...)
+% fnprefix is the prefix location of the inp files
 % saveloc is the location to save the mesh to
-% type is the mesh type ('stnd', 'fluor', etc)
+% source_coord_fn is a text file containing coordinates of the source
+% locations. If not provided, this routine will atempt to find
+% 'fnprefix_measurements_1.txt' and use the data from that. 
 
 
-%% find inp files
 no_regions = length(dir([fnprefix '*.inp']));
 if no_regions==0
-    errordlg(['Cannot find file .inp files whose prefix is ' fnprefix],'NIRFAST Error');
     error(['Cannot find file .inp files whose prefix is ' fnprefix]);
 end
 
@@ -31,12 +30,12 @@ idcounter=1;
 for i=1:size(relations,1)
     if i==1
         fn = [fnprefix num2str(relations(i,1))];
-        [mesh.elements,mesh.nodes] = read_nod_elm(fn,1);
-        region1 = repmat(1,[size(mesh.elements,1) 1]);
-        region2 = repmat(0,[size(mesh.elements,1) 1]);
-        no_ext_nodes = size(mesh.nodes,1);
+        [ele,node] = read_nod_elm(fn,1);
+        region1 = repmat(1,[size(ele,1) 1]);
+        region2 = repmat(0,[size(ele,1) 1]);
+        no_ext_nodes = size(node,1);
         NoBdyNodes(i) = no_ext_nodes;
-        NoBdyElems(i) = size(mesh.elements,1);
+        NoBdyElems(i) = size(ele,1);
     end
     if region_id(relations(i,1)) == 0
         region_id(relations(i,1)) = idcounter;
@@ -50,8 +49,8 @@ for i=1:size(relations,1)
             region_id(relations(i,j)) = idcounter;
             
             [fooele,foonode] = read_nod_elm(fn,1);
-            mesh.elements=[mesh.elements;fooele+size(mesh.nodes,1)]; %#ok<AGROW>
-            mesh.nodes=[mesh.nodes; foonode]; %#ok<AGROW>
+            ele=[ele;fooele+size(node,1)]; %#ok<AGROW>
+            node=[node; foonode]; %#ok<AGROW>
             region1 = cat(1,region1,repmat(momid,[size(fooele,1) 1]));
             region2 = cat(1,region2,repmat(kidid,[size(fooele,1) 1]));
             
@@ -60,22 +59,34 @@ for i=1:size(relations,1)
             idcounter = idcounter + 1;
     end
 end
-foo=zeros(size(mesh.nodes,1),1);
+foo=zeros(size(node,1),1);
 foo(1:no_ext_nodes,:) = 1;
+node=[foo node];
 
-mesh.bndvtx = foo;
-mesh.region = [region1 region2];
-
-%% write nirfast mesh
 fprintf('\tWriting nirfast mesh files\n');
+dlmwrite([saveloc '.node'],node,' ');
+dlmwrite([saveloc '.elem'],ele,' ');
+dlmwrite([saveloc '.region'],[region1 region2],' ');
 
-nregions = size(unique(mesh.region),1)-1;
-mesh.dimension = 3;
-mesh.mua = ones(nregions,1)*0.006;
-mesh.mus = ones(nregions,1)*2;
-mesh.kappa = 1./(3.*(mesh.mua+mesh.mus));
-mesh.ri = ones(nregions,1)*1.33;
-mesh.type = type;
+if nargin < 3
+% try to find 'fnprefix_measurements_1.txt' that can contain source
+% locations exported by mimics
+    if fnprefix(end)=='_', fnprefix(end)=[]; end
+    foo = dir([fnprefix '_measurements_*.txt']);
+    if length(foo)==1
+        source_coord_fn = foo.name;
+    else
+        source_coord_fn = [];
+    end
+end
+if ~isempty(source_coord_fn)
+    scoords = importdata(source_coord_fn);
+    if isstruct(scoords)
+        scoords=scoords.data(:,2:4);
+    end
+    dlmwrite([saveloc '.source'],scoords,'delimiter',' ','precision','%0.12f');
+end
 
-save_mesh(mesh,saveloc);
+
+
 
