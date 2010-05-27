@@ -110,12 +110,9 @@ end
 % Solve the equation: K.u = q_tot
 u = K\q_tot;
 % Get Nodal solutions and phase/amplitude at detector locations
-u = GetNodalSolutions(u,mesh,NoBdyNodes);
+[u du_dn] = GetNodalSolutions(u,mesh,NoBdyNodes);
 data=GetDataAtDetectorLocations(u,mesh);
 
-
-%% Calculating Du Dn for exterior region
-du_dn = -(mesh.ksi(1)./mesh.kappax(1)).*u(regionI_nodes);
 
 
 
@@ -164,25 +161,35 @@ end
 data.paa = [abs(tmp) angle(tmp).*180/pi];
 data.phi = u;
 
-function u = GetNodalSolutions(u,mesh,NoBdyNodes)
+function [u du_dn]= GetNodalSolutions(u,mesh,NoBdyNodes)
 % Drop solutions for flux values and just return the nodal intensity solutions
 %%
 
 relations=mesh.relations;
 startidx = NoBdyNodes(1);
-bf=false(size(u,1),1);
-bf(1:startidx) = true;
+bf1=false(size(u,1),1);
+bf1(1:startidx) = true;
+
+du_dn=zeros(sum(NoBdyNodes),1);
 
 endidx=startidx;
 for i=2:size(relations,1)
     startidx = endidx + 1;
     endidx = startidx+NoBdyNodes(i)-1;
-    bf(startidx:endidx)=true;
+    bf1(startidx:endidx)=true;
+    
+    du_dn(endidx+1:endidx+NoBdyNodes(i)) = u(endidx+1:endidx+NoBdyNodes(i))./mesh.kappax(i);
+    
     endidx = endidx + NoBdyNodes(i);
 end
-assert(sum(bf)==sum(NoBdyNodes));
+assert(sum(bf1)==sum(NoBdyNodes));
+assert(sum(bf2)==(sum(NoBdyNodes)-NoBdyNodes(1)));
 
-u=u(bf,:);
+%% Calculating Du Dn for exterior region
+tmp = -(mesh.ksi(1)./mesh.kappax(1)).*u(1:NoBdyNodes(1));
+du_dn(1:NoBdyNodes(1)) = tmp;
+
+u=u(bf1,:);
 
 function [mstart mend nstart nend] = CalculateLocationInK(m,n,NoBdyNodes,visitn)
 % Calculate the location of sub-matrices that build our main A and B
