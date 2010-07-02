@@ -18,7 +18,7 @@ if isempty(findstr(env,'pardiso'))
 else
     pardiso = 1;
 end
-pardisohost = eval(pardisolist)
+eval('pardisolist')
 hostname = getComputerName();
 hostname = cellstr(repmat(hostname,length(pardisohost),1));
 
