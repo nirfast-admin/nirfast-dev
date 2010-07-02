@@ -22,12 +22,13 @@ eval('pardisolist')
 hostname = getComputerName();
 hostname = cellstr(repmat(hostname,length(pardisohost),1));
 
+
 [nnodes,nsource]=size(qvec);
 phi=zeros(nnodes,nsource);
 msg=[];
 flag = 0;
 
-if strcmp(pardisohost,hostname) == 0 
+if sum(strcmp(pardisohost,hostname)) == 0 
     % calculate the preconditioner
     if isfield(mesh,'R') == 0 % for spec, this may have been calculated
         if length(mesh.nodes) >= 3800
@@ -65,7 +66,7 @@ if strcmp(pardisohost,hostname) == 0
         error('Some solutions are unusable; this could be caused by noisy/bad data');
     end
     
-elseif strcmp(pardisohost,hostname) ~= 0 & pardiso == 1
+elseif sum(strcmp(pardisohost,hostname)) ~= 0 & pardiso == 1
     qvec = full(qvec);
     x=ndrm_pardiso_solve(Mass,qvec);
     phi = x;

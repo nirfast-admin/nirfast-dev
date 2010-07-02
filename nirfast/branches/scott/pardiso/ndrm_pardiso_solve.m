@@ -28,10 +28,12 @@ v=ver('matlab');
 v=str2num(v.Version); % get the version number as a number
 
 switch v
-    case {7.9} % from R2009b the threading library is libomp
-            x=mex_pardiso_libomp(A,b,num_threads);
-    case {7.5,7.6,7.7,7.8,7.10} % from R2007b to R2009a the threading library is libguide
-            x=mex_pardiso_libguide(A,b,num_threads);
+    case {7.9,7.10} % from R2009b the threading library is libomp
+        %case {7.9} % from R2009b the threading library is libomp
+        x=mex_pardiso_libomp(A,b,num_threads);
+    case {7.5,7.6,7.7,7.8} % from R2007b to R2009a the threading library is libguide
+        %case {7.5,7.6,7.7,7.8,7.10} % from R2007b to R2009a the threading library is libguide
+        x=mex_pardiso_libguide(A,b,num_threads);
     otherwise
         error('Your matlab version should be newer than R2007b for NDRM to work');
 end % switch
