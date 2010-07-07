@@ -70,4 +70,5 @@ elseif sum(strcmp(pardisohost,hostname)) ~= 0 & pardiso == 1
     qvec = full(qvec);
     x=ndrm_pardiso_solve(Mass,qvec);
     phi = x;
+    R = [];
 end
