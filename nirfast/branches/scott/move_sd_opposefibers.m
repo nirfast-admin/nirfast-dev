@@ -65,7 +65,6 @@ if length(opp_fibers)~=nsource
 end
 
 for i = 1 : nsource
-    i
     % If "guess" of s-d coordinate (the coordinates input into
     % this program) is inside mesh surface, plane_line_interesect will
     % return "Does not intersect".  So, extend line segment to
@@ -139,9 +138,9 @@ for i = 1 : nsource
                 out = lineSegmentIntersect(XY1,XY2);
                 
                 if out.intAdjacencyMatrix == 1
-                    true = 1
+                    true = 1;
                     mesh.source.coord(opp_fibers(i,1),1) = out.intMatrixX;
-                    mesh.source.coord(opp_fibers(i,1),2) = out.intMatrixY
+                    mesh.source.coord(opp_fibers(i,1),2) = out.intMatrixY;
                 else
                     true = 0;
                     k = k+1;
