@@ -31,12 +31,15 @@
 #include <assert.h>
 
 #include "mat.h"
+#include "CStopWatch.h"
+
 #define PI 3.141592653589793115997963468544185161590576171875
 
 
 namespace mpi = boost::mpi;
 typedef double DOUBLE;
 typedef unsigned long ulong;
+typedef std::vector<double> DVector;
 
 /* macros used for multiplying and dividing complex numbers.
  *  form complex numbers z = a+bi and w = c+di,
@@ -83,7 +86,7 @@ void singular_integrand_polar(double* int_val_real, double* int_val_img,
 					double *gp1, double *gp2, double *wgt, int ngpts);
 					
 static void compute_integral_gausspts(
-	double *AAr, double *AAi, double *BBr, double *BBi,
+	DVector& AAr, DVector& AAi, DVector& BBr, DVector& BBi,
 	int ngpts, 	double *eta1, double *eta2, double *w,
 	ulong *jelem, double *xelem, double *yelem, double *zelem,
 	ulong tasksize, ulong nidx_local,

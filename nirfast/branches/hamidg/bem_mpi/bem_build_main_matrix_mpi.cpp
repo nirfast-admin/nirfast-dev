@@ -14,7 +14,7 @@ void main_build_matrix(
     double *nodes, double *elements,
     ulong nnod, ulong nelem,
     double omegar, double omegai, double D, ulong mynum_procs,
-    double*& Ar, double*& Ai, double*& Br, double*& Bi,
+    DVector& Ar, DVector& Ai, DVector& Br, DVector& Bi,
 	mpi::environment& env, mpi::communicator& world,
 	std::vector<ulong>& tasksizes) {
 	
@@ -83,9 +83,6 @@ void main_build_matrix(
 	for (ulong i=world.rank(); i<nnod; i+=world.size()) {
 		ulong node_id = i+1;
 		ulong nidx_local = i / world.size();
-		#ifdef _debug2
-		std::cout << i << std::endl;
-		#endif
 		for(el = 0; el < nelem; ++el) {
 			jel[0] = (ulong) elements(el,0);	
 			jel[1] = (ulong) elements(el,1);
@@ -99,12 +96,6 @@ void main_build_matrix(
 			zel[0] = nodes(jel[0]-1,2);
 			zel[1] = nodes(jel[1]-1,2);
 			zel[2] = nodes(jel[2]-1,2);
-			#ifdef _debug2
-			std::cout << "el = " << el << std::endl;
-			#endif
-			#ifdef _debug2
-			std::cout << jel[0] << ' ' << jel[1] << ' ' << jel[2] << std::endl;
-			#endif
 			if(node_id == jel[0]) {
 				for(j=0; j<3; *(int_val_real+j)=0.0, *(int_val_img+j)=0.0, ++j);
 				singular_integrand_polar(int_val_real, int_val_img, omegar,
@@ -160,12 +151,13 @@ void main_build_matrix(
 	delete [] eta1;
 	delete [] eta2;
 	delete [] w;
-	std::cout << "  *Process " << world.rank() << 
-		" finished its sub-matrix construction: " << tasksize << ' ' << std::endl;
+	/*std::cout << "  * Process " << world.rank() << 
+		" finished its sub-matrix construction: " << 
+		tasksize << " nodes." << std::endl;*/
 }
 
 static void compute_integral_gausspts(
-	double *AAr, double *AAi, double *BBr, double *BBi,
+	DVector& AAr, DVector& AAi, DVector& BBr, DVector& BBi,
 	int ngpts, 	double *eta1, double *eta2, double *w,
 	ulong *jelem, double *xelem, double *yelem, double *zelem,
 	ulong tasksize, ulong nidx_local,
@@ -177,15 +169,16 @@ static void compute_integral_gausspts(
 	ulong t_result;
 	double z_real, z_img, gi_real, gi_img;
 	double dgdr_real, dgdr_img, dgdn_real, dgdn_img;
-	double param_real, param_img, *aa_real, *aa_img, *bb_real, *bb_img;
+	double param_real, param_img;
+	double *aa_real, *aa_img, *bb_real, *bb_img;
 	double temp_result, xss, yss, zss, four_PI_diff;
 
 	param_real = omegar;
 	param_img = omegai;
-	aa_real = AAr + ((nidx_local)-tasksize);
-	aa_img  = AAi + ((nidx_local)-tasksize);
-	bb_real = BBr + ((nidx_local)-tasksize);
-	bb_img  = BBi + ((nidx_local)-tasksize);
+	aa_real = &AAr[0] + ((nidx_local)-tasksize);
+	aa_img  = &AAi[0] + ((nidx_local)-tasksize);
+	bb_real = &BBr[0] + ((nidx_local)-tasksize);
+	bb_img  = &BBi[0] + ((nidx_local)-tasksize);
 	four_PI_diff = 4*PI*diff_coeff;
 
 	for(int k = ngpts -1; k>=0; --k) {
@@ -231,11 +224,15 @@ static void compute_integral_gausspts(
 			
 			/* AA[nidx_local][jelem[j]-1] += phi[j]*dgdn*area*w[k]*diff_coeff */
 			(*(aa_real + t_result)) +=  phi[j]*dgdn_real;
+			//AAr[nidx_local + (jelem[j]-1)*tasksize] += phi[j]*dgdn_real;
 			(*(aa_img + t_result)) += phi[j]*dgdn_img;
+			//AAi[nidx_local + (jelem[j]-1)*tasksize] += phi[j]*dgdn_img;
 
-			/* BB[nidx_locale][jelem[j]-1] += phi[j]*gi*area*w[k] */
+			/* BB[nidx_local][jelem[j]-1] += phi[j]*gi*area*w[k] */
 			(*(bb_real + t_result)) += phi[j]*(gi_real);
+//			BBr[nidx_local + (jelem[j]-1)*tasksize] += phi[j]*(gi_real);
 			(*(bb_img + t_result)) += phi[j]*(gi_img);
+//			BBi[nidx_local + (jelem[j]-1)*tasksize] += phi[j]*(gi_img);
 			
 		}
 		 
@@ -428,14 +425,19 @@ void write_AB_to_matlab(const char* varname,
 	    exit(1);
 	}
 
+	
 	mxArray *mxAB = mxCreateDoubleMatrix(nnod, nnod, mxREAL);
 	double *matpointer = mxGetPr(mxAB);
+
 	for (ulong i=0; i<nnod; ++i) {
 		ulong procn = i % worldsize;
 		ulong rownum = i / worldsize;
 		ulong tasksize_local = tasksizes[procn];
+//		double *arrayp = &(All_AB[procn][0])+rownum;
 		for (ulong j=0; j<nnod; ++j) {
+			assert(rownum+tasksize_local*j<tasksize_local*nnod);
 			matpointer[i+nnod*j] = All_AB[procn][rownum+tasksize_local*j];
+//			matpointer[i+nnod*j] = *(arrayp+tasksize_local*j);
 		}
 	}
 	int st = matPutVariable(pmat,varname,mxAB);
@@ -451,6 +453,7 @@ void write_AB_to_matlab(const char* varname,
 	}
 	mxDestroyArray(mxAB);
 }
+
 int main(int argc, char *argv[]) {
 	
 	// Boost.MPI
@@ -462,12 +465,12 @@ int main(int argc, char *argv[]) {
 	double omegar, omegai;
 	double D;
 	ulong mynum_procs;
-	double *Arp, *Aip, *Brp, *Bip;
+	//double *Arp, *Aip, *Brp, *Bip;
 	
 	// Read the input mesh from a .mat file
 	mxArray *mxnodes, *mxelements, *mxomega, *mxD, *mxmynum_procs;
 	get_mesh_from_matlab("bem_mpi_input.mat", mxnodes, mxelements,
-		mxomega, mxD, mxmynum_procs);
+						 mxomega, mxD, mxmynum_procs);
 	nodes = mxGetPr(mxnodes);
 	nnod = mxGetM(mxnodes);
 	elements = mxGetPr(mxelements);
@@ -478,9 +481,9 @@ int main(int argc, char *argv[]) {
 	else
 		omegai = 0;
 	D = *mxGetPr(mxD);
-	
 	mynum_procs = (ulong) *mxGetPr(mxmynum_procs);
 	
+	// Compute size of partitions that each process will handle
 	std::vector<ulong> tasksizes(world.size(), nnod / world.size());
 	ulong R = nnod % world.size();
 	for (ulong i=0; i<tasksizes.size(); ++i) {
@@ -490,37 +493,41 @@ int main(int argc, char *argv[]) {
 	}
 	ulong tasksize_local = tasksizes[world.rank()];
 	
+	// Assign enough memory based on current workers task size
 	std::vector<double> VecAr(tasksize_local*nnod);
 	std::vector<double> VecAi(tasksize_local*nnod);
 	std::vector<double> VecBr(tasksize_local*nnod);
 	std::vector<double> VecBi(tasksize_local*nnod);
-	Arp = &VecAr[0];
-	Aip = &VecAi[0];
-	Brp	= &VecBr[0];
-	Bip = &VecBi[0];	
+	
 	// Build components of A and B matrices on different nodes of a cluster
 	main_build_matrix(nodes, elements, nnod, nelem, omegar, omegai,
-		D, mynum_procs, Arp, Aip, Brp, Bip, env, world, tasksizes);
+		D, mynum_procs, VecAr, VecAi, VecBr, VecBi, env, world, tasksizes);
 
-	// Gather pieces of A and B from different nodes and assemble a full matrix
+	// Gather pieces of A and B from different processes
+	// and write the full matrix in a .mat file
 	if (world.rank()==0) {
 		std::vector< std::vector<double> > All_Ar(world.size());
 		std::vector< std::vector<double> > All_Ai(world.size());
 		std::vector< std::vector<double> > All_Br(world.size());
 		std::vector< std::vector<double> > All_Bi(world.size());
-		
-		std::cout << " Gathering matrices from different workers...";
+		std::cout << " Gathering matrices from different workers..."; std::cout.flush();
 		gather(world, VecAr, All_Ar, 0);
 		gather(world, VecAi, All_Ai, 0);
 		gather(world, VecBr, All_Br, 0);
 		gather(world, VecBi, All_Bi, 0);
-		std::cout << " done." << std::endl;
-		std::cout << " Writing Matlab files...";
+		std::cout << " done." << std::endl; std::cout.flush();
+		std::cout << " Writing Matlab files..."; std::cout.flush();
+		CStopWatch mytimer;
+		mytimer.startTimer();
 		write_AB_to_matlab("Ar",All_Ar,tasksizes,nnod);
 		write_AB_to_matlab("Ai",All_Ai,tasksizes,nnod);
 		write_AB_to_matlab("Br",All_Br,tasksizes,nnod);
 		write_AB_to_matlab("Bi",All_Bi,tasksizes,nnod);
-		std::cout << " done." << std::endl;
+		std::cout << " done." << std::endl; std::cout.flush();
+		mytimer.stopTimer();
+		std::cout << " Time spent writing .mat files: " << mytimer.getElapsedTime()
+			<< std::endl;
+
 		// Create a file to tell Matlab it can read the .mat files
 		std::ofstream ofs("bem_mpi.lock");
 		ofs.close();

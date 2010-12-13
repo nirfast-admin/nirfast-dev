@@ -62,7 +62,7 @@ for scounter=1:num_sources
             [region_elems region_nodes] = GetNodesAndElementsOfRegion(mesh,regionInfo(rid));
             %region_coords = mesh.nodes(region_nodes,:);
             
-            [ar ai br bi] = BuildMainMatrix_K(mesh,region_elems,omega(region),mesh.kappa(region),21);
+            [ar ai br bi nids] = BuildMainMatrix_K(mesh,region_elems,omega(region),mesh.kappa(region),16);
             %[ar ai br bi] = main_build_matrix_K(mesh.nodes, region_elems, region_coords, region_nodes,...
                 %omega(region), mesh.kappa(region), 2048);
             A = complex(ar,ai); B = complex(br,bi);
@@ -75,9 +75,11 @@ for scounter=1:num_sources
 
             foor = relations(region,:); foor = setdiff(foor,0);
             for i=1:length(foor)
-                %Node_idxm = BdyNodeIndices{foor(i)};
+                Node_idxm1 = BdyNodeIndices{foor(i)};
+                [tf Node_idxm] = ismember(Node_idxm1,nids);
                 for j=1:length(foor)
-                    %Node_idxn = BdyNodeIndices{foor(j)};
+                    Node_idxn1 = BdyNodeIndices{foor(j)};
+                    [tf Node_idxn] = ismember(Node_idxn1,nids);
                     % Get locations of current sub-matrix in big K
                     [mstart mend nstart nend] = CalculateLocationInK(...
                         foor(i),foor(j),NoBdyNodes,visits(foor(i)));
@@ -87,14 +89,14 @@ for scounter=1:num_sources
                         rhs_idx(mstart:mend) = true(mend-mstart+1,1);
                     end
                     if foor(j)==1
-                        %K(mstart:mend,nstart:nend) = [A(Node_idxm,Node_idxn) + (mesh.ksi(rid)).*B(Node_idxm,Node_idxn)];
-                        K(mstart:mend,nstart:nend) = [A + (mesh.ksi(rid)).*B];
+                        K(mstart:mend,nstart:nend) = [A(Node_idxm,Node_idxn) + (mesh.ksi(rid)).*B(Node_idxm,Node_idxn)];
+%                         K(mstart:mend,nstart:nend) = [A + (mesh.ksi(rid)).*B];
                     elseif foor(j)~=rid
-                        %K(mstart:mend,nstart:nend) = [A(Node_idxm,Node_idxn)  -B(Node_idxm,Node_idxn)];
-                        K(mstart:mend,nstart:nend) = [A  -B];
+                        K(mstart:mend,nstart:nend) = [A(Node_idxm,Node_idxn)  -B(Node_idxm,Node_idxn)];
+%                         K(mstart:mend,nstart:nend) = [A  -B];
                     else
-                        %K(mstart:mend,nstart:nend) = [A(Node_idxm,Node_idxn) B(Node_idxm,Node_idxn)];
-                        K(mstart:mend,nstart:nend) = [A B];
+                        K(mstart:mend,nstart:nend) = [A(Node_idxm,Node_idxn) B(Node_idxm,Node_idxn)];
+%                         K(mstart:mend,nstart:nend) = [A B];
                     end
                 end
             end
@@ -139,19 +141,22 @@ data=GetDataAtDetectorLocations(u,mesh);
 
 
 
-function [ar ai br bi] = BuildMainMatrix_K(mesh,region_elems,omega,D,num_procs)
+function [ar ai br bi nids] = BuildMainMatrix_K(mesh,region_elems,omega,D,num_procs)
 % Call the MPI-based matrix build and wait till it's done.
 warning('off','MATLAB:DELETE:FileNotFound');
 
 % Renumber the region nodes and elements such that nodes are from 1 to
 % number of nodes in region
-nids = unique([region_elems(:,2);region_elems(:,3),region_elems(:,4)]);
+region_elems=region_elems(:,2:4);
+nids = unique([region_elems(:,1);region_elems(:,2);region_elems(:,3)]);
 [tf elements]=ismember(region_elems,nids);
 nodes = mesh.nodes(nids,:);
 
 save('bem_mpi_input.mat','nodes','elements','omega','D','num_procs');
 delete('bem_mpi.lock');
-syscommand=['mpirun -np ' num2str(num_procs) ' -machinefile machinefile bem_build_main_matrix_mpi.exe'];
+command = which('bem_build_main_matrix_mpi.exe');
+mpidir = fileparts(command);
+syscommand=['mpirun -np ' num2str(num_procs) ' -machinefile ' mpidir '/machinefile ' command];
 system(syscommand);
 while true
     if exist('bem_mpi.lock','file')
