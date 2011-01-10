@@ -37,14 +37,30 @@ if frequency < 0
 end
 
 %****************************************
+% read data - This is the calibrated experimental data or simulated data
+data = load_data_newl(data_fn);
+if ~isfield(data,'paa')
+    errordlg('Data not found or not properly formatted','NIRFAST Error');
+    error('Data not found or not properly formatted');
+end
+anom = data.paa;
+anom(:,1) = log(anom(:,1)); %take log of amplitude
+anom(:,2) = anom(:,2)/180.0*pi; % phase is in radians and not degrees
+anom(find(anom(:,2)<0),2) = anom(find(anom(:,2)<0),2) + (2*pi);
+anom(find(anom(:,2)>(2*pi)),2) = anom(find(anom(:,2)>(2*pi)),2) - (2*pi);
+
+
 % If not a workspace variable, load mesh
 if ischar(fwd_mesh)== 1
-  fwd_mesh = load_mesh(fwd_mesh);
+  fwd_mesh = load_mesh_newl(fwd_mesh);
+  fwd_mesh.link = data.link;
 end
 if ~strcmp(fwd_mesh.type,'stnd')
     errordlg('Mesh type is incorrect','NIRFAST Error');
     error('Mesh type is incorrect');
 end
+
+
 
 % Load or calculate second mesh for reconstruction basis
 if ischar(recon_basis)
@@ -78,17 +94,7 @@ pixel.support = mesh_support(recon_mesh.nodes,...
                              recon_mesh.elements,...
                              recon_mesh.element_area);
 
-% read data - This is the calibrated experimental data or simulated data
-anom = load_data(data_fn);
-if ~isfield(anom,'paa')
-    errordlg('Data not found or not properly formatted','NIRFAST Error');
-    error('Data not found or not properly formatted');
-end
-anom = anom.paa;
-anom(:,1) = log(anom(:,1)); %take log of amplitude
-anom(:,2) = anom(:,2)/180.0*pi; % phase is in radians and not degrees
-anom(find(anom(:,2)<0),2) = anom(find(anom(:,2)<0),2) + (2*pi);
-anom(find(anom(:,2)>(2*pi)),2) = anom(find(anom(:,2)>(2*pi)),2) - (2*pi);
+
 % find NaN in data
 
 datanum = 0;
