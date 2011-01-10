@@ -23,10 +23,10 @@ data.name = 'nirfast';
 if ischar(fn) ~= 0
     
     if ~exist(fn,'file')
-      errordlg('The data file could not be found','NIRFAST Error');
-      error('The data file could not be found');
+        errordlg('The data file could not be found','NIRFAST Error');
+        error('The data file could not be found');
     end
-
+    
     datatemp = importdata(fn);
     
     % support for new matlab importdata format
@@ -46,7 +46,7 @@ if ischar(fn) ~= 0
         test = ' ';
     end
     
-
+    
     % FLUORESCENCE
     if (strcmp(test(1),'x') == 1 || strcmp(test(1),'f') == 1 || strcmp(test(1),'m') == 1)
         
@@ -88,8 +88,8 @@ if ischar(fn) ~= 0
             data.paaxflmm = [data.paaxfl data.paamm];
         end
         
-
-    % SPECTRAL
+        
+        % SPECTRAL
     elseif (strcmp(test(1),'w') == 1)
         S = char(text);
         wloc = findstr(S,'w');
@@ -97,11 +97,19 @@ if ischar(fn) ~= 0
             data.wv(i) = str2num(strtrim(S(wloc(i)+1:wloc(i+1)-1)));
         end
         data.wv(end+1) = str2num(strtrim(S(wloc(end)+1:end)));
-
-        data.paa = datatemp;       
-
+        
+        data.paa = datatemp;
+    end
     % STANDARD
-    else
+    datatemp = importdata(fn);
+    if  isfield(datatemp,'textdata')
+        text = datatemp.textdata;
+        test = char(text(1));
+        if strcmp(test(1:6),'source')
+            datatemp = datatemp.data;
+            data.link = datatemp(:,1:3);
+            datatemp = datatemp(:,4:5);
+        end
         [m,n] = size(datatemp);
         data.paa = datatemp;
         if n>1
@@ -111,33 +119,33 @@ if ischar(fn) ~= 0
             data.amplitude = data.paa(:,1);
         end
     end
-
+    
 else
     data = fn;
 end
 
- % if wv_array exists, only take those wavelengths
- % modified for consistency, so that it still outputs Amplitude and phase
- % in radians, and only the wavelength at which it is. HD 07-09-09
- % fixed as data.paa for even wavelengths were wrong HD 07-09-09
+% if wv_array exists, only take those wavelengths
+% modified for consistency, so that it still outputs Amplitude and phase
+% in radians, and only the wavelength at which it is. HD 07-09-09
+% fixed as data.paa for even wavelengths were wrong HD 07-09-09
 if (nargin > 1 && isfield(data,'wv'))
     anom_big = [];
     for i = 1:length(wv_array)
-          index_wv = find(data.wv == wv_array(i));
-          if isempty(index_wv)
-              display([ num2str(wv_array(i)) ' nm data not available']);
-              data = [];
-              return;
-          end
-          anom(:,1) = data.paa(:,(index_wv(1)-1)*2+1);
-          anom(:,2) = data.paa(:,(index_wv(1)-1)*2+2);
-          %anom(:,1) = log(anom(:,1));
-          %anom(:,2) = anom(:,2)/180.0*pi;
-          %anom(find(anom(:,2)<0),2) = anom(find(anom(:,2)<0),2) + (2*pi);
-          %anom(find(anom(:,2)>(2*pi)),2) = anom(find(anom(:,2)>(2*pi)),2) - (2*pi);
-          %anom = reshape(anom',length(anom)*2,1);
-          anom_big = [anom_big anom];
-          clear anom
+        index_wv = find(data.wv == wv_array(i));
+        if isempty(index_wv)
+            display([ num2str(wv_array(i)) ' nm data not available']);
+            data = [];
+            return;
+        end
+        anom(:,1) = data.paa(:,(index_wv(1)-1)*2+1);
+        anom(:,2) = data.paa(:,(index_wv(1)-1)*2+2);
+        %anom(:,1) = log(anom(:,1));
+        %anom(:,2) = anom(:,2)/180.0*pi;
+        %anom(find(anom(:,2)<0),2) = anom(find(anom(:,2)<0),2) + (2*pi);
+        %anom(find(anom(:,2)>(2*pi)),2) = anom(find(anom(:,2)>(2*pi)),2) - (2*pi);
+        %anom = reshape(anom',length(anom)*2,1);
+        anom_big = [anom_big anom];
+        clear anom
     end
     data.paa = anom_big;
     data.wv = wv_array;
