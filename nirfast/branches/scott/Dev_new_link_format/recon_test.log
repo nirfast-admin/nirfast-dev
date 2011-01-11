@@ -1,0 +1,19 @@
+Forward Mesh   = stnd_test
+Frequency      = 100.000000 MHz
+Data File      = junk.paa
+Initial Regularization  = 10
+Filter         = 0
+Output Files   = recon_test_mua.sol
+               = recon_test_mus.sol
+---------------------------------
+Iteration Number          = 1
+Projection error          = 0.000000
+Amp Regularization        = 13.772185
+Phs Regularization        = 0.284911
+---------------------------------
+Iteration Number          = 2
+Projection error          = 0.000000
+Projection error change   = -3.956551 %
+---------------------------------
+STOPPING CRITERIA REACHED
+Computation TimeRegularization = 11.999761
