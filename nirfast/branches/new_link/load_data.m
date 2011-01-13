@@ -46,12 +46,18 @@ if ischar(fn) ~= 0
         test = ' ';
     end
     
+    if strcmp(test(1),'s') == 1
+        data.link = datatemp(:,1:3);
+        datatemp = datatemp(:,4:end);
+        test(1:strfind(test,'active')+5)=[];
+        test = test(find(isspace(test)==0):end);
+    end
     
     % FLUORESCENCE
     if (strcmp(test(1),'x') == 1 || strcmp(test(1),'f') == 1 || strcmp(test(1),'m') == 1)
         
         % find labels
-        S = char(text);
+        S = test;
         i = 1;
         while ~isempty(S)
             [T,S] = strtok(S);
@@ -89,29 +95,20 @@ if ischar(fn) ~= 0
         end
         
         
-        % SPECTRAL
-    elseif (strcmp(test(1),'w') == 1)
-        S = char(text);
-        wloc = findstr(S,'w');
-        for i=1:1:numel(wloc)-1
-            data.wv(i) = str2num(strtrim(S(wloc(i)+1:wloc(i+1)-1)));
-        end
-        data.wv(end+1) = str2num(strtrim(S(wloc(end)+1:end)));
+        %         % SPECTRAL
+        %     elseif (strcmp(test(1),'w') == 1)
+        %         S = char(text);
+        %         wloc = findstr(S,'w');
+        %         for i=1:1:numel(wloc)-1
+        %             data.wv(i) = str2num(strtrim(S(wloc(i)+1:wloc(i+1)-1)));
+        %         end
+        %         data.wv(end+1) = str2num(strtrim(S(wloc(end)+1:end)));
+        %
+        %         data.paa = datatemp;
         
-        data.paa = datatemp;
-    end
-    
-    % STANDARD
-    datatemp = importdata(fn);
-    if  isfield(datatemp,'textdata')
-        text = datatemp.textdata;
-        test = char(text(1));
-        if strcmp(test(1:6),'source')
-            datatemp = datatemp.data;
-            data.link = datatemp(:,1:3);
-            datatemp = datatemp(:,4:5);
-        end
-        [m,n] = size(datatemp);
+        % STANDARD
+    else
+        [junk,n] = size(datatemp);
         data.paa = datatemp;
         if n>1
             data.phase = data.paa(:,1);

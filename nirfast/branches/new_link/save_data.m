@@ -1,4 +1,4 @@
-function save_data_newl(data,fn)
+function save_data(data,fn)
 
 % save_data(data,fn)
 %
@@ -43,6 +43,11 @@ elseif isfield(data,'amplitudex') || isfield(data,'amplitudemm') || isfield(data
     paa = [];
     
     % check which fields exist
+    if isfield(data,'link')
+        str = [str ',''source''' ',''det''' ',''active'''];
+        str2 = [str2 '%-10s\t%-10s\t%-10s\t']; 
+        paa = [data.link];
+    end
     if isfield(data,'phasex')
         str = [str ',''xphase'''];
         str2 = [str2 '%-10s\t'];
