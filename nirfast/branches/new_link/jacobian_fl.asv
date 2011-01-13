@@ -10,6 +10,7 @@ function [J,data]=jacobian_fl(mesh,frequency,datax)
 % datax is the excitation field data (variable)
 
 
+
 % error checking
 if frequency < 0
     errordlg('Frequency must be nonnegative','NIRFAST Error');
@@ -122,6 +123,8 @@ data.phix = datax.phi;
 data2 = data;
 ind = find(data.link(:,3) == 0);
 data2.complexm(ind,:)=[];
+data2.phix(ind,:)=[];
+data2.aphim(ind,:)=[];
     
 if omega == 0
     [J] = build_jacobian_cw_fl(mesh,data2,omega);

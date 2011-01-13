@@ -26,8 +26,8 @@ for i = 1 : nsd
     if mesh.link(i,3) == 1
         if mesh.dimension == 2
             
-            aphim_n=conj(data.aphim(:,jj));
-            dphix_n=data.phix(:,i);
+            aphim_n=conj(data.aphim(:,mesh.link(i,2)));
+            dphix_n=data.phix(:,mesh.link(i,1));
             
             % Calculate the gamma part here
             J.complexm(k,1:end/2) = ...

@@ -35,15 +35,14 @@ frequency = 0;
 %*******************************************************
 % Read data
 data = load_data(data_fn);
-if ~isfield(data,'paa')
+if ~isfield(data,'amplitudefl')
     errordlg('Data not found or not properly formatted','NIRFAST Error');
     error('Data not found or not properly formatted');
 end
 % remove zeroed data
 ind = find(data.link(:,3)==0);
-data.paa(ind,:) = []; clear ind
-anom = data.paa;
-anom = log(anom.amplitudefl);
+data.amplitudefl(ind,:) = []; clear ind
+anom = log(data.amplitudefl);
 % Only reconstructs fluorescence yield!
 
 %*******************************************************
@@ -138,8 +137,7 @@ for it = 1 : iteration
     % build jacobian
     [Jwholem,datafl] = jacobian_fl(fwd_mesh,frequency,data_fwd);
     ind = find(datafl.link(:,3)==0);
-    datafl.amplitude(ind,:) = []; clear ind
-    
+    datafl.amplitudem(ind,:) = []; clear ind
     
     % Read reference data
     clear ref;

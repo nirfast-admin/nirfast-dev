@@ -13,7 +13,7 @@ function qvec = gen_source_adjoint(mesh)
 ind = find(mesh.link(:,3)==0);
 foo = mesh.link;
 foo(ind,:)=[]; clear ind
-meas = unique(foo);
+meas = unique(foo(:,2));
 nmeas = length(meas);
 
 [nnodes,junk]=size(mesh.nodes);
