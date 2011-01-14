@@ -50,13 +50,13 @@ anom = log(data.amplitudefl);
 % or load from file
 if ischar(fwd_mesh)==1
     fwd_mesh = load_mesh(fwd_mesh);
-    fwd_mesh.link = data.link;
-    clear data
 end
 if ~strcmp(fwd_mesh.type,'fluor')
     errordlg('Mesh type is incorrect','NIRFAST Error');
     error('Mesh type is incorrect');
 end
+fwd_mesh.link = data.link;
+clear data
 
 etamuaf_sol=[output_fn '_etamuaf.sol'];
 
