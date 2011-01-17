@@ -351,9 +351,21 @@ elseif exist([fn '.link']) == 2
         for i = 1:n
             for j = 1:m
                 if link(i,j) ~= 0
-                    fprintf(fid, '%g %g %g\n', i, link(i,j), 1);
+                    fprintf(fid, '%g %g %g', i, link(i,j), 1);
+                    if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
+                        for ii=2:length(mesh.wv)
+                            fprintf(fid,' %g',1);
+                        end
+                    end
+                    fprintf(fid,'\n');
                 elseif link(i,j) == 0
-                    fprintf(fid, '%g %g %g\n', i, 0, 0);
+                    fprintf(fid, '%g %g %g', i, 0, 0);
+                    if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
+                        for ii=2:length(mesh.wv)
+                            fprintf(fid,' %g',0);
+                        end
+                    end
+                    fprintf(fid,'\n');
                     fl = 1;
                 end
             end
