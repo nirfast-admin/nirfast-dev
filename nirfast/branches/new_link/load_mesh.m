@@ -346,7 +346,7 @@ elseif exist([fn '.link']) == 2
         [n,m] = size(link);
 
         fid = fopen([fn '.link'],'w');
-        fprintf(fid,'%s\n','source det active');
+        fprintf(fid,'%s\n','source detector active');
         fl = 0;
         for i = 1:n
             for j = 1:m
