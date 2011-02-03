@@ -26,6 +26,7 @@ end
 
 if nargin == 2
   wv_array = sort(mesh.wv);
+  linki = 1:length(wv_array);
 elseif nargin == 3
   wv_array = sort(wv);
   for i = 1:length(wv_array)
