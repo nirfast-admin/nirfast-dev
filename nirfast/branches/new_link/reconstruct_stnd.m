@@ -46,12 +46,14 @@ end
 
 % remove zeroed data
 anom.paa(find(anom.link(:,3)==0),:) = [];
+data_link = anom.link;
 
 anom = anom.paa;
 anom(:,1) = log(anom(:,1)); %take log of amplitude
 anom(:,2) = anom(:,2)/180.0*pi; % phase is in radians and not degrees
 anom(find(anom(:,2)<0),2) = anom(find(anom(:,2)<0),2) + (2*pi);
 anom(find(anom(:,2)>(2*pi)),2) = anom(find(anom(:,2)>(2*pi)),2) - (2*pi);
+anom = reshape(anom',length(anom)*2,1); 
 
 %*******************************************************
 
@@ -64,8 +66,7 @@ if ~strcmp(fwd_mesh.type,'stnd')
     errordlg('Mesh type is incorrect','NIRFAST Error');
     error('Mesh type is incorrect');
 end
-fwd_mesh.link = data.link;
-clear data
+fwd_mesh.link = data_link;
 
 % Load or calculate second mesh for reconstruction basis
 if ischar(recon_basis)
@@ -145,8 +146,8 @@ for it = 1 : iteration
   
   % Calculate jacobian
   [J,data]=jacobian_stnd(fwd_mesh,frequency,recon_mesh);
-  data.amplitude(find(data.link(:,3)==0),:) = [];
-  data.phase(find(data.link(:,3)==0),:) = [];
+  data.amplitude(find(data_link(:,3)==0),:) = [];
+  data.phase(find(data_link(:,3)==0),:) = [];
 
   % Set jacobian as Phase and Amplitude part instead of complex
   J = J.complete;
