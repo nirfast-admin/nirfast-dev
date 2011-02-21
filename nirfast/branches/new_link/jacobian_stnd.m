@@ -146,7 +146,7 @@ data.paa = [data.amplitude data.phase];
 
 data2 = data;
 ind = find(data.link(:,3)==0);
-data2.complexm(ind,:)=[];
+data2.complex(ind,:)=[];
 
 if nargin == 3 % use second mesh basis for jacobian
     data3 = interpolatef2r(mesh,mesh2,data2);

@@ -83,7 +83,7 @@ k = 1;
       k = k + 1;
     end
   end
-end
+
 
 if strcmp(mesh.type,'spec') == 1    % Use spectral mesh
   rmfield(J,'complex');
