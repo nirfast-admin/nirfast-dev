@@ -12,6 +12,13 @@ function [data] = get_boundary_data(mesh,phi)
 % data is the boundary data
 
 
+source = unique(mesh.link(:,1));
+meas = unique(mesh.link(:,2));
+[nmeas,junk]=size(meas);
+for i = 1:nmeas
+    m_ind(i) = find(mesh.meas.num == meas(i));
+end
+
 
 if isfield(mesh.meas,'int_func') == 0
     errordlg('Need to call move_detector on the mesh first','NIRFAST Error');
@@ -20,7 +27,7 @@ else
     
     % We don't want contributions from internal nodes on boundary
     % values
-    bnd_val = mesh.bndvtx(mesh.elements(mesh.meas.int_func(:,1),:));
+    bnd_val = mesh.bndvtx(mesh.elements(mesh.meas.int_func(m_ind,1),:));
     [nrow,ncol]=size(bnd_val);
     for i = 1 : nrow
         for j = 1 : ncol
@@ -37,8 +44,8 @@ else
     data = [];
     for i = 1:length(mesh.link);
         if mesh.link(i,3) == 1
-            sn = mesh.link(i,1);
-            dn = mesh.link(i,2);
+            sn = source == mesh.link(i,1);
+            dn = find(mesh.meas.num == mesh.link(i,2));
             vtx_ind = mesh.elements(mesh.meas.int_func(dn,1),:);
             data = [data; mesh.meas.int_func(dn,2:end)*phi(vtx_ind,sn)];
         elseif mesh.link(i,3) == 0

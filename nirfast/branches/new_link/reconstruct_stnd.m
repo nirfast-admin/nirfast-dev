@@ -45,19 +45,17 @@ if ~isfield(anom,'paa')
 end
 
 % remove zeroed data
-anom.paa(find(anom.link(:,3)==0),:) = [];
+anom.paa(anom.link(:,3)==0,:) = [];
 data_link = anom.link;
-
 anom = anom.paa;
+
 anom(:,1) = log(anom(:,1)); %take log of amplitude
 anom(:,2) = anom(:,2)/180.0*pi; % phase is in radians and not degrees
-anom(find(anom(:,2)<0),2) = anom(find(anom(:,2)<0),2) + (2*pi);
-anom(find(anom(:,2)>(2*pi)),2) = anom(find(anom(:,2)>(2*pi)),2) - (2*pi);
+anom(anom(:,2)<0,2) = anom(anom(:,2)<0,2) + (2*pi);
+anom(anom(:,2)>(2*pi),2) = anom(anom(:,2)>(2*pi),2) - (2*pi);
 anom = reshape(anom',length(anom)*2,1); 
 
 %*******************************************************
-
-%****************************************
 % If not a workspace variable, load mesh
 if ischar(fwd_mesh)== 1
   fwd_mesh = load_mesh(fwd_mesh);
@@ -67,7 +65,9 @@ if ~strcmp(fwd_mesh.type,'stnd')
     error('Mesh type is incorrect');
 end
 fwd_mesh.link = data_link;
+clear data
 
+%******************************************************
 % Load or calculate second mesh for reconstruction basis
 if ischar(recon_basis)
   recon_mesh = load_mesh(recon_basis);
@@ -117,9 +117,11 @@ if strcmp(lambda.type, 'Automatic')
     end
 end
 
+%************************************************************
 % Initiate projection error
 pj_error = [];
 
+%************************************************************
 % Initiate log file
 fid_log = fopen([output_fn '.log'],'w');
 fprintf(fid_log,'Forward Mesh   = %s\n',fwd_mesh.name);
@@ -146,8 +148,8 @@ for it = 1 : iteration
   
   % Calculate jacobian
   [J,data]=jacobian_stnd(fwd_mesh,frequency,recon_mesh);
-  data.amplitude(find(data_link(:,3)==0),:) = [];
-  data.phase(find(data_link(:,3)==0),:) = [];
+  data.amplitude(data_link(:,3)==0,:) = [];
+  data.phase(data_link(:,3)==0,:) = [];
 
   % Set jacobian as Phase and Amplitude part instead of complex
   J = J.complete;
@@ -157,8 +159,8 @@ for it = 1 : iteration
   ref(:,1) = log(data.amplitude);
   ref(:,2) = data.phase;
   ref(:,2) = ref(:,2)/180.0*pi;
-  ref(find(ref(:,2)<0),2) = ref(find(ref(:,2)<0),2) + (2*pi);
-  ref(find(ref(:,2)>(2*pi)),2) = ref(find(ref(:,2)>(2*pi)),2) - (2*pi);
+  ref(ref(:,2)<0,2) = ref(ref(:,2)<0,2) + (2*pi);
+  ref(ref(:,2)>(2*pi),2) = ref(ref(:,2)>(2*pi),2) - (2*pi);
   ref = reshape(ref',length(ref)*2,1);
   data_diff = (anom-ref);
 

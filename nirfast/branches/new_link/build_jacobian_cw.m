@@ -11,11 +11,12 @@ function [J] = build_jacobian_cw(mesh,data)
 % data is the data
 % J is the resulting Jacobian
 
-
+source = unique(mesh.link(:,1));
+meas = unique(mesh.link(:,2));
 
 [ncol,junk] = size(mesh.nodes);
 [nrow] = length(find(mesh.link(:,3)~=0));
-[nsd, msd] = size(mesh.link); 
+[nsd, msd] = size(mesh.link);
 
 J.complex = zeros(nrow,ncol);
 J.complete = zeros(nrow,ncol);
@@ -25,33 +26,37 @@ J.complete = zeros(nrow,ncol);
 fake_i = ones(ncol,1).*1e-20;
 
 k = 1;
- for i = 1 : nsd
-     if mesh.link(i,3) == 1 
-      if mesh.dimension == 2
-	
-	% Calculate the absorption part here
-	J.complex(k,:) = ...
-	    -IntFG(mesh.nodes(:,1:2),...
-		   sort(mesh.elements')',...
-		   mesh.element_area,...
-		   complex(full(data.phi(:,mesh.link(i,1))),fake_i),...
-		   conj(complex(full(data.aphi(:,mesh.link(i,2))),fake_i)));
-	% Extract log amplitude
-	J.complete(k,:) = ...
-	    real(J.complex(k,:)./data.complex(k));
-      elseif mesh.dimension == 3
-	
-	% Calculate the absorption part here
-	J.complex(k,:) = ...
-	    -IntFG_tet4(mesh.nodes,...
-			sort(mesh.elements')',...
-			mesh.element_area,...
-			complex(full(data.phi(:,mesh.link(i,1))),fake_i),...
-			conj(complex(full(data.aphi(:,mesh.link(i,2))),fake_i)));
-	% Extract log amplitude
-	J.complete(k,:) = ...
-	    real(J.complex(k,:)./data.complex(k));
-      end
-      k = k + 1;
+for i = 1 : nsd
+    if mesh.link(i,3) == 1
+        sn = source == mesh.link(i,1);
+        dn = meas == mesh.link(i,2);
+        
+        if mesh.dimension == 2
+            
+            % Calculate the absorption part here
+            J.complex(k,:) = ...
+                -IntFG(mesh.nodes(:,1:2),...
+                sort(mesh.elements')',...
+                mesh.element_area,...
+                complex(full(data.phi(:,sn)),fake_i),...
+                conj(complex(full(data.aphi(:,dn)),fake_i)));
+            % Extract log amplitude
+            J.complete(k,:) = ...
+                real(J.complex(k,:)./data.complex(k));
+        elseif mesh.dimension == 3
+            
+            % Calculate the absorption part here
+            J.complex(k,:) = ...
+                -IntFG_tet4(mesh.nodes,...
+                sort(mesh.elements')',...
+                mesh.element_area,...
+                complex(full(data.phi(:,sn)),fake_i),...
+                conj(complex(full(data.aphi(:,dn)),fake_i)));
+            % Extract log amplitude
+            J.complete(k,:) = ...
+                real(J.complex(k,:)./data.complex(k));
+        end
+        k = k + 1;
     end
- end
+end
+

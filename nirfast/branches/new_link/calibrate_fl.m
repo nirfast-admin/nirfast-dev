@@ -56,7 +56,7 @@ end
 data.link = data_meas.link;
 clear data_meas
 
-ind = find(data.link(:,3)==0);
+ind = data.link(:,3)==0;
 tempdata = data.amplitudefl;
 tempdata(ind,:) = [];
 

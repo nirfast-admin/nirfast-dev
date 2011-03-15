@@ -239,11 +239,14 @@ if exist([fn '.source']) == 0
     disp([fn '.source file is not present']);
 elseif exist([fn '.source']) == 2
     source = importdata([fn '.source']);
+    
     if isfield(source,'textdata') == 0
+        % No text at top of source file (old format)
         mesh.source.fixed = 0;
         [ns,nc]=size(source);
+        mesh.source.num = [1:ns]';
         if nc == mesh.dimension
-            mesh.source.fwhm = ones(ns,1).*0;
+            mesh.source.fwhm = zeros(ns,1);
             mesh.source.coord = source;
         elseif nc == mesh.dimension+1
             mesh.source.fwhm = source(:,mesh.dimension+1);
@@ -252,25 +255,16 @@ elseif exist([fn '.source']) == 2
             mesh.source.fwhm = [];
             mesh.source.coord = [];
         end
-        if strcmp(mesh.type,'stnd') == 1 || strcmp(mesh.type,'stnd_spn')
-            mus_eff = mesh.mus;
-        elseif strcmp(mesh.type,'stnd_bem') == 1
-            mus_eff = mesh.mus(1);
-        elseif strcmp(mesh.type,'fluor') || strcmp(mesh.type,'fluor_bem')
-            mus_eff = mesh.musx;
-        elseif strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
-            [mua,mus] = calc_mua_mus(mesh,mesh.wv(1));
-            mus_eff = mus;
-            clear mua mus
-        end
-        disp('Moving Sources');
-        [mesh]=move_source(mesh,mus_eff,3);
-    elseif isfield(source,'textdata') == 1
+        
+    elseif isfield(source,'textdata') == 1  && sum(sum(strcmp(source.textdata,'num'))) == 0
+        % If text at top of source file, but columns are not labeled ('num', 'x', 'y', etc.)
+        % it should only say 'fixed' at the top of the file (old format)
         mesh.source.fixed = 1;
         [ns,nc]=size(source.data);
+        mesh.source.num = [1:ns]';
         if nc == mesh.dimension
+            mesh.source.fwhm = zeros(ns,1);
             mesh.source.coord = source.data;
-            mesh.source.fwhm = ones(ns,1).*0;
         elseif nc == mesh.dimension+1
             mesh.source.fwhm = source.data(:,mesh.dimension+1);
             mesh.source.coord = source.data(:,1:mesh.dimension);
@@ -278,16 +272,55 @@ elseif exist([fn '.source']) == 2
             mesh.source.fwhm = [];
             mesh.source.coord = [];
         end
-        disp('Fixed Sources');
-        if mesh.dimension == 2
-            [ind,int_func] = mytsearchn(mesh,mesh.source.coord(:,1:2));
-        elseif mesh.dimension == 3
-            [ind,int_func] = mytsearchn(mesh,mesh.source.coord);
+        
+    elseif isfield(source,'textdata') == 1 && sum(sum(strcmp(source.textdata,'num'))) == 1
+        % Text flags at top of source file with column headings (new
+        % format)
+        [ntxt,junk] = size(source.textdata);
+        [ns,nc]=size(source.data);
+        mesh.source.fixed = 0;
+        if sum(sum(strcmp(source.textdata,'fixed'))) == 1
+            mesh.source.fixed = 1;
+            source.textdata = source.textdata(2,:);
         end
-        if any(isnan(ind)) == 1
-            errordlg('Source(s) outside the mesh; either move them manually or remove ''fixed'' from the source file','NIRFAST Warning');
+        mesh.source.num = source.data(:,logical(strcmp(source.textdata,'num')));
+        mesh.source.coord(:,1) = source.data(:,logical(strcmp(source.textdata,'x')));
+        mesh.source.coord(:,2) = source.data(:,logical(strcmp(source.textdata,'y')));
+        if sum(strcmp(source.textdata,'z')) == 1
+            mesh.source.coord(:,3) = source.data(:,logical(strcmp(source.textdata,'z')));
+        end
+        if sum(strcmp(source.textdata,'fwhm')) == 1
+            mesh.source.fwhm = source.data(:,logical(strcmp(source.textdata,'fwhm')));
+        else
+            mesh.source.fwhm = zeros(ns,1);
         end
     end
+end
+% Check and poistion sources
+if mesh.source.fixed == 1;
+    disp('Fixed Sources');
+    if mesh.dimension == 2
+        [ind,int_func] = mytsearchn(mesh,mesh.source.coord(:,1:2));
+    elseif mesh.dimension == 3
+        [ind,int_func] = mytsearchn(mesh,mesh.source.coord);
+    end
+    if any(isnan(ind)) == 1
+        errordlg('Source(s) outside the mesh; either move them manually or remove ''fixed'' from the source file','NIRFAST Warning');
+    end
+elseif mesh.source.fixed == 0;
+    if strcmp(mesh.type,'stnd') == 1 || strcmp(mesh.type,'stnd_spn')
+        mus_eff = mesh.mus;
+    elseif strcmp(mesh.type,'stnd_bem') == 1
+        mus_eff = mesh.mus(1);
+    elseif strcmp(mesh.type,'fluor') || strcmp(mesh.type,'fluor_bem')
+        mus_eff = mesh.musx;
+    elseif strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
+        [mua,mus] = calc_mua_mus(mesh,mesh.wv(1));
+        mus_eff = mus;
+        clear mua mus
+    end
+    disp('Moving Sources');
+    [mesh]=move_source(mesh,mus_eff,3);
     clear source mus_eff
 end
 
@@ -297,33 +330,54 @@ if exist([fn '.meas']) == 0
     disp([fn '.meas file is not present']);
 elseif exist([fn '.meas']) == 2
     meas = importdata([fn '.meas']);
+    
     if isfield(meas,'textdata') == 0
+        % No text at top of meas file (old format)
         mesh.meas.fixed = 0;
+        [nm,junk] = size(meas);
+        mesh.meas.num = [1:nm]'; clear nm junk
         mesh.meas.coord = meas;
+        
+    elseif isfield(meas,'textdata') == 1  && sum(sum(strcmp(meas.textdata,'num'))) == 0
+        % If text at top of source file, but columns are not labeled ('num', 'x', 'y', etc.)
+        % it should only say 'fixed' at the top of the file (old format)
+        mesh.meas.fixed = 1;
+        [nm,junk] = size(meas.data);
+        mesh.meas.num = [1:nm]'; clear nm junk
+        mesh.meas.coord = meas.data;
+        
+    elseif isfield(meas,'textdata') == 1 && sum(sum(strcmp(meas.textdata,'num'))) == 1
+        % Text flags at top of source file with column headings (new
+        % format)
+        mesh.meas.fixed = 0;
+        if sum(sum(strcmp(meas.textdata,'fixed'))) == 1
+            mesh.meas.fixed = 1;
+            meas.textdata = meas.textdata(2,:);
+        end
+        mesh.meas.num = meas.data(:,logical(strcmp(meas.textdata,'num')));
+        mesh.meas.coord(:,1) = meas.data(:,logical(strcmp(meas.textdata,'x')));
+        mesh.meas.coord(:,2) = meas.data(:,logical(strcmp(meas.textdata,'y')));
+        if sum(strcmp(meas.textdata,'z')) == 1
+            mesh.meas.coord(:,3) = meas.data(:,logical(strcmp(meas.textdata,'z')));
+        end
+    end
+    
+    % Check and/or move detectors
+    if mesh.meas.fixed == 0
         disp('Moving Detectors');
         [mesh]=move_detector(mesh);
-        if mesh.dimension == 2
-            [ind,int_func] = mytsearchn(mesh,mesh.meas.coord(:,1:2));
-        elseif mesh.dimension == 3
-            [ind,int_func] = mytsearchn(mesh,mesh.meas.coord);
-        end
-        if any(isnan(ind)) == 1
-            errordlg('Detector(s) outside the mesh','NIRFAST Warning');
-        else
-            mesh.meas.int_func = [ind int_func];
-        end
-    elseif isfield(meas,'textdata') == 1
-        mesh.meas.fixed = 1;
-        mesh.meas.coord = meas.data;
+    elseif mesh.meas.fixed == 1
         disp('Fixed Detectors');
-        if mesh.dimension == 2
-            [ind,int_func] = mytsearchn(mesh,mesh.meas.coord(:,1:2));
-        elseif mesh.dimension == 3
-            [ind,int_func] = mytsearchn(mesh,mesh.meas.coord);
-        end
-        if any(isnan(ind)) == 1
-            errordlg('Detector(s) outside the mesh; either move them manually or remove ''fixed'' from the meas file','NIRFAST Warning');
-        end
+    end
+    
+    if mesh.dimension == 2
+        [ind,int_func] = mytsearchn(mesh,mesh.meas.coord(:,1:2));
+    elseif mesh.dimension == 3
+        [ind,int_func] = mytsearchn(mesh,mesh.meas.coord);
+    end
+    if any(isnan(ind)) == 1
+        errordlg('Detector(s) outside the mesh','NIRFAST Warning');
+    else
         mesh.meas.int_func = [ind int_func];
     end
     clear meas
@@ -344,7 +398,7 @@ elseif exist([fn '.link']) == 2
         % convert to new
         link = load([fn '.link']);
         [n,m] = size(link);
-
+        
         fid = fopen([fn '.link'],'w');
         fprintf(fid,'%s\n','source detector active');
         fl = 0;
@@ -373,10 +427,10 @@ elseif exist([fn '.link']) == 2
         fclose(fid);
         
     end
-        
+    
     link = importdata([fn '.link']);
     mesh.link = link.data;
-        
+    
 end
 
 

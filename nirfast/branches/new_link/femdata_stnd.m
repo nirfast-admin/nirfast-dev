@@ -69,8 +69,9 @@ source = unique(mesh.link(:,1));
 qvec = spalloc(nnodes,nsource,nsource*100);
 if mesh.dimension == 2
   for i = 1 : nsource
+      s_ind = mesh.source.num == source(i);
     if mesh.source.fwhm(source(i)) == 0
-        qvec(:,i) = gen_source_point(mesh,mesh.source.coord(source(i),1:2));
+        qvec(:,i) = gen_source_point(mesh,mesh.source.coord(s_ind,1:2));
     else
       qvec(:,i) = gen_source(mesh.nodes(:,1:2),...
 			   sort(mesh.elements')',...
@@ -81,8 +82,9 @@ if mesh.dimension == 2
   end
 elseif mesh.dimension == 3
   for i = 1 : nsource
+      s_ind = mesh.source.num == source(i);
     if mesh.source.fwhm(source(i)) == 0
-        qvec(:,i) = gen_source_point(mesh,mesh.source.coord(source(i),1:3));
+        qvec(:,i) = gen_source_point(mesh,mesh.source.coord(s_ind,1:3));
     else
     qvec(:,i) = gen_source(mesh.nodes,...
 			   sort(mesh.elements')',...
@@ -128,7 +130,7 @@ data.amplitude = abs(data.complex);
 
 data.phase = atan2(imag(data.complex),...
 		   real(data.complex));
-data.phase(find(data.phase<0)) = data.phase(find(data.phase<0)) + (2*pi);
+data.phase(data.phase<0) = data.phase(data.phase<0) + (2*pi);
 data.phase = data.phase*180/pi;
 
 data.paa = [data.amplitude data.phase];

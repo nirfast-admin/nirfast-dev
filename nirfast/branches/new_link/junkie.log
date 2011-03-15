@@ -1,0 +1,166 @@
+Forward Mesh   = C:\New_link\junk
+Frequency      = 0.000000 MHz
+Initial Regularization  = 10
+Filtering        = 0
+Output Files   = junkie_etamuaf.solInitial Guess muaf = 1.987934e-003
+
+---------------------------------
+Iteration_fl Number          = 1
+Projection_fl error          = 4.444683
+Regularization Fluor            = 1.408679
+---------------------------------
+Iteration_fl Number          = 2
+Projection_fl error          = 3.063103
+Projection error change   = 31.083869 %
+Regularization Fluor            = 1.405482
+---------------------------------
+Iteration_fl Number          = 3
+Projection_fl error          = 2.147447
+Projection error change   = 29.893097 %
+Regularization Fluor            = 1.404606
+---------------------------------
+Iteration_fl Number          = 4
+Projection_fl error          = 1.546749
+Projection error change   = 27.972659 %
+Regularization Fluor            = 1.404903
+---------------------------------
+Iteration_fl Number          = 5
+Projection_fl error          = 1.153822
+Projection error change   = 25.403417 %
+Regularization Fluor            = 1.405770
+---------------------------------
+Iteration_fl Number          = 6
+Projection_fl error          = 0.895829
+Projection error change   = 22.359816 %
+Regularization Fluor            = 1.406876
+---------------------------------
+Iteration_fl Number          = 7
+Projection_fl error          = 0.724547
+Projection error change   = 19.119966 %
+Regularization Fluor            = 1.408039
+---------------------------------
+Iteration_fl Number          = 8
+Projection_fl error          = 0.608668
+Projection error change   = 15.993324 %
+Regularization Fluor            = 1.409162
+---------------------------------
+Iteration_fl Number          = 9
+Projection_fl error          = 0.528174
+Projection error change   = 13.224644 %
+Regularization Fluor            = 1.410193
+---------------------------------
+Iteration_fl Number          = 10
+Projection_fl error          = 0.470404
+Projection error change   = 10.937728 %
+Regularization Fluor            = 1.411112
+---------------------------------
+Iteration_fl Number          = 11
+Projection_fl error          = 0.427401
+Projection error change   = 9.141693 %
+Regularization Fluor            = 1.411912
+---------------------------------
+Iteration_fl Number          = 12
+Projection_fl error          = 0.394174
+Projection error change   = 7.774226 %
+Regularization Fluor            = 1.412597
+---------------------------------
+Iteration_fl Number          = 13
+Projection_fl error          = 0.367581
+Projection error change   = 6.746491 %
+Regularization Fluor            = 1.413176
+---------------------------------
+Iteration_fl Number          = 14
+Projection_fl error          = 0.345629
+Projection error change   = 5.972085 %
+Regularization Fluor            = 1.413660
+---------------------------------
+Iteration_fl Number          = 15
+Projection_fl error          = 0.327035
+Projection error change   = 5.379693 %
+Regularization Fluor            = 1.414060
+---------------------------------
+Iteration_fl Number          = 16
+Projection_fl error          = 0.310959
+Projection error change   = 4.915493 %
+Regularization Fluor            = 1.414388
+---------------------------------
+Iteration_fl Number          = 17
+Projection_fl error          = 0.296839
+Projection error change   = 4.540952 %
+Regularization Fluor            = 1.414654
+---------------------------------
+Iteration_fl Number          = 18
+Projection_fl error          = 0.284285
+Projection error change   = 4.229331 %
+Regularization Fluor            = 1.414869
+---------------------------------
+Iteration_fl Number          = 19
+Projection_fl error          = 0.273020
+Projection error change   = 3.962409 %
+Regularization Fluor            = 1.415040
+---------------------------------
+Iteration_fl Number          = 20
+Projection_fl error          = 0.262842
+Projection error change   = 3.727874 %
+Regularization Fluor            = 1.415176
+---------------------------------
+Iteration_fl Number          = 21
+Projection_fl error          = 0.253597
+Projection error change   = 3.517435 %
+Regularization Fluor            = 1.415282
+---------------------------------
+Iteration_fl Number          = 22
+Projection_fl error          = 0.245164
+Projection error change   = 3.325493 %
+Regularization Fluor            = 1.415365
+---------------------------------
+Iteration_fl Number          = 23
+Projection_fl error          = 0.237445
+Projection error change   = 3.148247 %
+Regularization Fluor            = 1.415429
+---------------------------------
+Iteration_fl Number          = 24
+Projection_fl error          = 0.230362
+Projection error change   = 2.983085 %
+Regularization Fluor            = 1.415478
+---------------------------------
+Iteration_fl Number          = 25
+Projection_fl error          = 0.223847
+Projection error change   = 2.828190 %
+Regularization Fluor            = 1.415515
+---------------------------------
+Iteration_fl Number          = 26
+Projection_fl error          = 0.217843
+Projection error change   = 2.682270 %
+Regularization Fluor            = 1.415542
+---------------------------------
+Iteration_fl Number          = 27
+Projection_fl error          = 0.212300
+Projection error change   = 2.544387 %
+Regularization Fluor            = 1.415562
+---------------------------------
+Iteration_fl Number          = 28
+Projection_fl error          = 0.207175
+Projection error change   = 2.413833 %
+Regularization Fluor            = 1.415577
+---------------------------------
+Iteration_fl Number          = 29
+Projection_fl error          = 0.202431
+Projection error change   = 2.290060 %
+Regularization Fluor            = 1.415587
+---------------------------------
+Iteration_fl Number          = 30
+Projection_fl error          = 0.198033
+Projection error change   = 2.172625 %
+Regularization Fluor            = 1.415595
+---------------------------------
+Iteration_fl Number          = 31
+Projection_fl error          = 0.193951
+Projection error change   = 2.061157 %
+Regularization Fluor            = 1.415600
+---------------------------------
+Iteration_fl Number          = 32
+Projection_fl error          = 0.190159
+Projection error change   = 1.955334 %
+---------------------------------
+STOPPING CRITERIA FOR FLUORESCENCE COMPONENT REACHED

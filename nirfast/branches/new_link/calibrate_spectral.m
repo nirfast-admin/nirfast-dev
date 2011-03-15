@@ -64,10 +64,10 @@ paa_anom = paa_anom.paa;
 % Look for phase wrapping
 [j,k] = size(paa_anom);
 for i=1:2:k
-paa_anom(find(paa_anom(:,i+1)<0),i+1) = ...
-    paa_anom(find(paa_anom(:,i+1)<0),i+1) + (360);
-paa_anom(find(paa_anom(:,i+1)>(360)),i+1) = ...
-    paa_anom(find(paa_anom(:,i+1)>(360)),i+1) - (360);
+paa_anom(paa_anom(:,i+1)<0,i+1) = ...
+    paa_anom(paa_anom(:,i+1)<0,i+1) + (360);
+paa_anom(paa_anom(:,i+1)>(360),i+1) = ...
+    paa_anom(paa_anom(:,i+1)>(360),i+1) - (360);
 end
 
 % load homogeneous data
@@ -78,10 +78,10 @@ paa_homog = paa_homog.paa;
 % Look for phase wrapping
 [j,k] = size(paa_homog);
 for i=1:2:k
-paa_homog(find(paa_homog(:,i+1)<0),i+1) = ...
-    paa_homog(find(paa_homog(:,i+1)<0),i+1) + (360);
-paa_homog(find(paa_homog(:,i+1)>(360)),i+1) = ...
-    paa_homog(find(paa_homog(:,i+1)>(360)),i+1) - (360);
+paa_homog(paa_homog(:,i+1)<0,i+1) = ...
+    paa_homog(paa_homog(:,i+1)<0,i+1) + (360);
+paa_homog(paa_homog(:,i+1)>(360),i+1) = ...
+    paa_homog(paa_homog(:,i+1)>(360),i+1) - (360);
 end
 
 mua_big = []; 

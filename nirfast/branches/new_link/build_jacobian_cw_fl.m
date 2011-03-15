@@ -8,6 +8,9 @@ function [J] = build_jacobian_cw_fl(mesh,data,omega)
 % data is the data
 % omega is frequency
 
+source = unique(mesh.link(:,1));
+meas = unique(mesh.link(:,2));
+
 [ncol,junk] = size(mesh.nodes);
 [nrow] = length(find(mesh.link(:,3)~=0));
 [nsd, msd] = size(mesh.link);
@@ -24,18 +27,19 @@ f_tau = complex(0,-omega.*mesh.gamma);
 k = 1;
 for i = 1 : nsd
     if mesh.link(i,3) == 1
+        
+        sn = source == mesh.link(i,1);
+        dn = meas == mesh.link(i,2);
+        
         if mesh.dimension == 2
-            
-            aphim_n=conj(data.aphim(:,mesh.link(i,2)));
-            dphix_n=data.phix(:,mesh.link(i,1));
             
             % Calculate the gamma part here
             J.complexm(k,1:end/2) = ...
                 IntFG(mesh.nodes(:,1:2),...
                 sort(mesh.elements')',...
                 mesh.element_area,...
-                conj(data.aphim(:,mesh.link(i,2))),...
-                (data.phix(:,mesh.link(i,1))).*f_gamma);
+                conj(data.aphim(:,dn)),...
+                (data.phix(:,sn)).*f_gamma);
             
             % Extract log amplitude
             J.completem(k,:) = ...
@@ -48,8 +52,8 @@ for i = 1 : nsd
                 intfg_tet4(mesh.nodes(:,1:2),...
                 sort(mesh.elements')',...
                 mesh.element_area,...
-                conj(data.aphim(:,mesh.link(i,2))),...
-                (data.phix(:,mesh.link(i,1))).*f_gamma);
+                conj(data.aphim(:,dn)),...
+                (data.phix(:,sn)).*f_gamma);
             
             %  Extract log amplitude
             J.completem(k,:) = ...

@@ -67,14 +67,14 @@ qvec = zeros(nnodes,nsource);
 beta = mesh.gamma.*(1-(sqrt(-1).*omega.*mesh.tau));
 % get rid of any zeros!
 if frequency == 0
-    beta(find(beta==0)) = 1e-20;
+    beta(beta==0) = 1e-20;
 else
-    beta(find(beta==0)) = complex(1e-20,1e-20);
+    beta(beta==0) = complex(1e-20,1e-20);
 end
 
 if mesh.dimension == 2
   for i = 1 : nsource
-    val = beta.*datax.phi(:,source(i));
+    val = beta.*datax.phi(:,i);
     qvec(:,i) = gen_source_fl(mesh.nodes(:,1:2),...
 			      sort(mesh.elements')',...
 			      mesh.dimension,...
@@ -82,7 +82,7 @@ if mesh.dimension == 2
   end
 elseif mesh.dimension == 3
   for i = 1 : nsource
-    val = beta.*datax.phi(:,source(i));
+    val = beta.*datax.phi(:,i);
     qvec(:,i) = gen_source_fl(mesh.nodes,...
 			      sort(mesh.elements')',...
 			      mesh.dimension,...
@@ -112,7 +112,7 @@ data.amplitudem = abs(data.complexm);
 
 data.phasem = atan2(imag(data.complexm),...
 		   real(data.complexm));
-data.phasem(find(data.phasem<0)) = data.phasem(find(data.phasem<0)) + (2*pi);
+data.phasem(data.phasem<0) = data.phasem(data.phasem<0) + (2*pi);
 data.phasem = data.phasem*180/pi;
 
 data.paam = [data.amplitudem data.phasem];
@@ -120,7 +120,7 @@ data.phix = datax.phi;
 
 % Build the Emission jacobian
 data2 = data;
-ind = find(data.link(:,3) == 0);
+ind = data.link(:,3) == 0;
 data2.complexm(ind,:)=[];
     
 if omega == 0

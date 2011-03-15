@@ -10,7 +10,7 @@ function qvec = gen_source_adjoint(mesh)
 
 
 % Allocate memory
-ind = find(mesh.link(:,3)==0);
+ind = mesh.link(:,3)==0;
 foo = mesh.link;
 foo(ind,:)=[]; clear ind
 meas = unique(foo(:,2));
