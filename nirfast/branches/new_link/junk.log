@@ -1,74 +1,31 @@
-Forward Mesh   = circ2000_new
-Frequency      = 100.000000 MHz
+Forward Mesh       = circle2000_86_spec
+Frequency          = 100.000000 MHz
 Initial Regularization  = 10
-Filter         = 0
-Output Files   = junk_mua.sol
-               = junk_mus.sol
-Initial Guess mua = 1.003280e-002
-Initial Guess mus = 1.000555e+000
+Filter             = 0
+Wavelengths Used   = 661 735 761 785 
+
+********************************
+Output files:
+junk_HbO.sol
+junk_deoxyHb.sol
+junk_Water.sol
+junk_S-Amplitude.sol
+junk_S-Power.sol
+Initial Guess HbO         = 1.000000e-002
+Initial Guess deoxyHb     = 1.000000e-002
+Initial Guess Water       = 4.000000e-001
+Initial Guess S-Amplitude = 1
+Initial Guess S-Power     = 1
 ---------------------------------
 Iteration Number          = 1
-Projection error          = 1.264375
-Amp Regularization        = 6.991843
-Phs Regularization        = 0.139656
+Projection error          = 0.000000
+Regularization        = 57.602277
 ---------------------------------
 Iteration Number          = 2
-Projection error          = 0.231237
-Projection error change   = 81.711367 %
-Amp Regularization        = 4.009869
-Phs Regularization        = 0.079661
----------------------------------
-Iteration Number          = 3
-Projection error          = 0.068886
-Projection error change   = 70.209752 %
-Amp Regularization        = 2.280142
-Phs Regularization        = 0.045056
----------------------------------
-Iteration Number          = 4
-Projection error          = 0.038538
-Projection error change   = 44.056051 %
-Amp Regularization        = 1.287420
-Phs Regularization        = 0.025350
----------------------------------
-Iteration Number          = 5
-Projection error          = 0.020189
-Projection error change   = 47.612011 %
-Amp Regularization        = 0.725069
-Phs Regularization        = 0.014237
----------------------------------
-Iteration Number          = 6
-Projection error          = 0.012604
-Projection error change   = 37.567834 %
-Amp Regularization        = 0.408362
-Phs Regularization        = 0.007990
----------------------------------
-Iteration Number          = 7
-Projection error          = 0.009384
-Projection error change   = 25.553143 %
-Amp Regularization        = 0.229943
-Phs Regularization        = 0.004483
----------------------------------
-Iteration Number          = 8
-Projection error          = 0.007613
-Projection error change   = 18.871106 %
-Amp Regularization        = 0.129383
-Phs Regularization        = 0.002517
----------------------------------
-Iteration Number          = 9
-Projection error          = 0.006476
-Projection error change   = 14.937139 %
-Amp Regularization        = 0.072764
-Phs Regularization        = 0.001414
----------------------------------
-Iteration Number          = 10
-Projection error          = 0.006030
-Projection error change   = 6.881713 %
-Amp Regularization        = 0.040910
-Phs Regularization        = 0.000795
----------------------------------
-Iteration Number          = 11
-Projection error          = 0.006202
-Projection error change   = -2.848085 %
+Projection error          = 0.000000
+Projection error change   = -754.052180 %
 ---------------------------------
 STOPPING CRITERIA REACHED
-Computation TimeRegularization = 21.980687
+Computation Time = 16.741452
+Final Solution:
+1
