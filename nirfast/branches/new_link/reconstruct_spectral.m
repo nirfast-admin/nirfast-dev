@@ -57,7 +57,8 @@ if 2*(m-2) ~= md
 end
 
 % we need log amplitude and phase in radians
-anom = [];
+anom_a = [];
+anom_p = [];
 k=1;
 for i = 1:2:md
     data.paa(:,i) = log(data.paa(:,i));
@@ -66,10 +67,14 @@ for i = 1:2:md
     foo(foo>(2*pi)) = foo(foo>(2*pi)) - (2*pi);
     data.paa(:,i+1) = foo; clear foo
     linki = logical(data_link(:,k+2));
-    anom = [anom; data.paa(linki,i); data.paa(linki,i+1)];
+    anom_a = [anom_a; data.paa(linki,i)];
+    anom_p = [anom_p; data.paa(linki,i+1)];
     k = k+1;
 end
-clear data
+anom = zeros(length(anom_a)*2,1);
+anom(1:2:end) = anom_a;
+anom(2:2:end) = anom_p;
+clear data anom_a anom_p
 
 % check to ensure wv_array wavelengths match the wavelength list fwd_mesh
 for i = 1:length(wv_array)
@@ -231,8 +236,9 @@ for it = 1:iteration
     disp('Building Jacobian using jacobian_spectral')
     [J,data,fwd_mesh] = jacobian_spectral(fwd_mesh,frequency,wv_array,recon_mesh);
     
-    % we need log amplitude and phase in radians
-    ref = [];
+    % we need log amplitude and phase in radians    
+    ref_a = [];
+    ref_p = [];
     k=1;
     for i = 1:2:md
         data.paa(:,i) = log(data.paa(:,i));
@@ -241,10 +247,15 @@ for it = 1:iteration
         foo(foo>(2*pi)) = foo(foo>(2*pi)) - (2*pi);
         data.paa(:,i+1) = foo; clear foo
         linki = logical(data_link(:,k+2));
-        ref = [ref; data.paa(linki,i); data.paa(linki,i+1)];
+        ref_a = [ref_a; data.paa(linki,i)];
+        ref_p = [ref_p; data.paa(linki,i+1)];
         k = k+1;
     end
-    clear data
+    ref = zeros(length(ref_a)*2,1);
+    ref(1:2:end) = ref_a;
+    ref(2:2:end) = ref_p;
+    clear data ref_a ref_p
+
     
     % Calculate data difference:
     data_diff = (anom - ref);
