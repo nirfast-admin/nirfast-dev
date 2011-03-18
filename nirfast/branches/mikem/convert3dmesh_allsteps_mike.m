@@ -1,8 +1,8 @@
 % Goes through entire mesh creation process from mimics.
 
-mimics_fn = '3029_34k_3reg';
-sd_fn = '3029_sd.txt';
-mesh_fn = mimics_fn;
+mimics_fn = 'homog_11k';
+sd_fn = 'homog_cw_sd.txt';
+mesh_fn = 'homog_cw';
 
 mesh = mimics2nirfast_3dmesh_mike(mimics_fn,'tempmesh');
 l = importdata('link_full.txt');

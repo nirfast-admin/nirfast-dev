@@ -1,17 +1,19 @@
 function [adata hdata amesh hmesh] = dataprep(a_fn,h_fn,amesh,hmesh,arep,hrep,aplane,hplane,fibers)
 % [hdata adata] = dataprep(h_fn,a_fn,hmesh,amesh)
+% run after dataprep to drop points from figures:
+% [data] = combine_cursor_data(data,index)
 
 % Drops noisy data based on PMT S/N
 % Drops near source data and bad fibers
 % Data files to use are adata and hdata
 close all
-load('C:\Users\michael_a_mastanduno\Documents\LINK changes\full_link.mat')
+load('/Users/michael_a_mastanduno/LocalFS/mikem/full_link.mat') % loads the variable, 'full_link'
 link = full_link;
 % if plotflag is set to 1, it will plot data lnri vs. sd distance
 plotflag = 1;
 wavelengths = [661 735 785 808 826 849];
-
-drop_thresh = [.05 4];
+%wavelengths = 785;
+drop_thresh = [.1 4];
 dist_thresh = 16;
 
 % HOMOG load and drop data, then convert to spectral
@@ -19,9 +21,9 @@ disp(['Dropping HOMOG data at ',num2str(wavelengths)])
 i = 3;
 j = 1;
 for wv = wavelengths
-    hpaa = [num2str(h_fn),num2str(wv),'nm_rep',num2str(hrep),'_plane',num2str(hplane),'.paa'];
+    hpaa = [num2str(h_fn),'_right_',num2str(wv),'nm_rep',num2str(hrep),'_plane',num2str(hplane),'.paa'];
     if fopen(hpaa) == -1
-        hpaa = [num2str(h_fn),num2str(wv),'nm_rep',num2str(hrep),'.paa'];
+        hpaa = [num2str(h_fn),'_right_',num2str(wv),'nm_rep',num2str(hrep),'.paa'];
     end
     tmp = load_data(hpaa);
     hdata.paa(:,j:j+1) = tmp.paa;
@@ -53,9 +55,9 @@ disp(['Dropping ANOM data at ',num2str(wavelengths)])
 i = 3;
 j = 1;
 for wv = wavelengths
-    apaa = [num2str(a_fn),num2str(wv),'nm_rep',num2str(arep),'_plane',num2str(aplane),'.paa'];
+    apaa = [num2str(a_fn),'_right_',num2str(wv),'nm_rep',num2str(arep),'_plane',num2str(aplane),'.paa'];
     if fopen(apaa) == -1
-        apaa = [num2str(a_fn),num2str(wv),'nm_rep',num2str(arep),'.paa'];
+        apaa = [num2str(a_fn),'_right_',num2str(wv),'nm_rep',num2str(arep),'.paa'];
     end
     tmp = load_data(apaa);
     adata.paa(:,j:j+1) = tmp.paa;
@@ -82,4 +84,7 @@ end
 
 clear a_fn apaa arep data drop_thresh h_fn hpaa hrep i wavelengths m0 m1
 clear dist_thresh plotflag aplane hplane
+for i = 12:-1:1;
+    figure(i)
+end
 end
