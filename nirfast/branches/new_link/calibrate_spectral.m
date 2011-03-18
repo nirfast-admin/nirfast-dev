@@ -120,8 +120,8 @@ for i=1:2:k
     % Make a standard mesh for this wavelength
     wvmesh = mesh_anom;
     wvmesh.type = 'stnd';
-    wvmesh.link = [mesh_anom.link(:,1:2) mesh_anom.link(:,(i+1)/2+2)];
-    [wvmesh.mua, wvmesh.mus, wvmesh.kappa] = calc_mua_mus(mesh_anom,mesh.wv(((i-1)/2)+1));
+    wvmesh.link = [mesh.link(:,1:2) mesh.link(:,(i+1)/2+2)];
+    [wvmesh.mua, wvmesh.mus, wvmesh.kappa] = calc_mua_mus(mesh,mesh.wv(((i-1)/2)+1));
 
     % Calculate global mua and mus plus offsets for patient data
     if frequency == 0
@@ -145,7 +145,6 @@ for i=1:2:k
     % calculate offsets between modeled homogeneous and measured
     % homogeneous and using these calibrate data
     data_h_fem(:,1) = log(data_h_fem(:,1));
-    data_a_fem(:,1) = log(data_a_fem(:,1));
     paa_anom(:,i) = log(paa_anom(:,i));
     paa_homog(:,i) = log(paa_homog(:,i));
     paa_anomtmp = paa_anom(:,i:i+1);
@@ -194,17 +193,17 @@ mesh.sp(:,1) = -p(1);
 mesh.sa(:,1) = exp(p(2));
 
 % generate initial guess if optimization toolbox exists
-if exist('constrain_lsqfit')
+if exist('constrain_lsqfi') % it's fit...
      display('Using Optimization Toolbox');
     [A,b,Aeq,beq,lb,ub]=constrain_lsqfit(nwn,nc);
 
-    [C,resnorm,residual,exitflag,output,lambda] = lsqlin(E,mua_big,A,b,Aeq,beq,lb,ub)
+    [C,resnorm,residual,exitflag,output,lambda] = lsqlin(E,mua_big,A,b,Aeq,beq,lb,ub);
 
 
     if(C(end)==0)
         % for water recon (no fat)...
         ub(end) = 0.5;lb(end) = 0.5;
-        [C,resnorm,residual,exitflag,output,lambda] = lsqlin(E,mua_big,A,b,Aeq,beq,lb,ub)
+        [C,resnorm,residual,exitflag,output,lambda] = lsqlin(E,mua_big,A,b,Aeq,beq,lb,ub);
     end
     
     mesh.conc = repmat(C',length(mesh.nodes),1);

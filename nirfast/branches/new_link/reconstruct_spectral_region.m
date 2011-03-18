@@ -1,12 +1,12 @@
-function [fwd_mesh,pj_error] = reconstruct_spectral(fwd_mesh,...
-    recon_basis,...
-    frequency,...
-    data_fn,...
-    iteration,...
-    lambda,...
-    output_fn,...
-    filter_n,...
-    wv_array)
+function [fwd_mesh,pj_error] = reconstruct_spectral_region(fwd_mesh,...
+                                                    frequency,...
+                                                    data_fn,...
+                                                    iteration,...
+                                                    lambda,...
+                                                    output_fn,...
+                                                    filter_n,...
+                                                    region,...
+                                                    wv_array)
 
 % [fwd_mesh,pj_error] = reconstruct_spectral(fwd_mesh,...
 %                                            recon_basis,...
@@ -42,7 +42,7 @@ end
 %*******************************************************
 % read data - This is the calibrated experimental data or simulated data
 disp('Loading data and wavelength information')
-data = load_data(data_fn,wv_array);
+data = load_data(data_fn);
 % if specified wavelength not available, terminate.
 if isempty(data) || ~isfield(data,'paa')
     errordlg('Data not found or not properly formatted','NIRFAST Error');
@@ -54,6 +54,11 @@ data_link = data.link;
 if 2*(m-2) ~= md
     errordlg('data.link does not equal data.paa','NIRFAST Error');
     error('data.link does not equal data.paa');
+end
+
+% wv_array is supposed to be optional. Defaults to data.wv
+if ~exist('wv_array')
+    wv_array = data.wv;
 end
 
 % we need log amplitude and phase in radians
@@ -109,9 +114,6 @@ pj_error = [];
 % Initiate log file
 fid_log = fopen([output_fn,'.log'],'w');
 fprintf(fid_log,'Forward Mesh       = %s\n',fwd_mesh.name);
-if ischar(recon_basis)
-    fprintf(fid_log,'Basis              = %s\n',recon_basis);
-end
 fprintf(fid_log,'Frequency          = %f MHz\n',frequency);
 if ischar(data_fn) ~= 0
     fprintf(fid_log,'Data file          = %s\n',data_fn);
@@ -183,10 +185,6 @@ for it = 1:iteration
     end
     J = Jtemp;
     
-    %remove NaN padding
-    ind = ~isnan(J(:,1));
-    J = J(ind,:);
-    
     clear Jtemp;
     
     % Read reference data
@@ -241,9 +239,9 @@ for it = 1:iteration
     % reduce or increase lambda based on last pj_error
     if it ~= 1
         if ((sum(data_diff.^2) < pj_error(end-1)))
-            lambda.value = lambda.value./10^0.25;
+            lambda = lambda./10^0.25;
         else
-            lambda.value = lambda.value.*10^0.125;
+            lambda = lambda.*10^0.125;
         end
     end
     

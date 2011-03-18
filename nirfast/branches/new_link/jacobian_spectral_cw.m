@@ -1,6 +1,6 @@
-function [J,data,mesh] = jacobian_spectral(mesh,frequency,wv_array,mesh2)
+function [J,data,mesh] = jacobian_spectral_cw(mesh,wv_array,mesh2)
 
-% [J,data] = jacobian_spectral(mesh,frequency,wv,mesh2)
+% [J,data] = jacobian_spectral_cw(mesh,wv,mesh2)
 %
 % Used by jacobian and reconstruct!
 % Calculates jacobian for a spectral mesh
@@ -8,12 +8,13 @@ function [J,data,mesh] = jacobian_spectral(mesh,frequency,wv_array,mesh2)
 % if a reconstruction basis is given, interpolates jacobian onto that mesh
 %
 % mesh is the input mesh (variable or filename)
-% frequency is the modulation frequency (MHz)
 % wv is optional wavelength array
 % mesh2 is optional reconstruction basis (mesh variable)
 % J is the Jacobian
 % data is the calculated data
 
+
+frequency = 0;
 
 %% initialize parallel workers if toolbox is available
 parallel = parallel_init();
@@ -118,7 +119,9 @@ else
         else
             [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency);
         end
+        
     end
+    
 end
 
 %% Assign outputs
@@ -127,33 +130,20 @@ data.wv = wv_array;
 J = [];
 for i = 1:nwv
     ndata = sum(mesh.link(:,i+2)~=0);
-    J_small = zeros(ndata*2,nnodes*(m+2));
+    J_small = zeros(ndata,nnodes*m);
     
     data_tmp(i).paa(end+1:ndata,:) = NaN;
     data.paa(:,i*2-1:i*2) = data_tmp(i).paa;
     
-    J_mua = J_tmp(i).complete(:,nnodes+1 : end);
-    J_kappa = J_tmp(i).complete(:,1:nnodes);
+    J_mua = J_tmp(i).complete;
+    %J_kappa = J_tmp(i).complete(:,1:nnodes);
     
     % NaN pad for equal length jacobians
-    J_mua(end+1:ndata*2,:) = NaN;
-    J_kappa(end+1:ndata*2,:) = NaN;
+    J_mua(end+1:ndata,:) = NaN;
+    %J_kappa(end+1:ndata*2,:) = NaN;
     
     for j = 1:m
         J_small(:,(j-1)*nnodes+1:(j)*nnodes) = E(i).val(j).*(J_mua);
-    end
-    
-    if exist('mesh2') == 1
-        sa_factor = -3*(mesh2_J(i).kappa.^2).*((wv_array(i)./1000).^(-mesh2_J(i).sp));
-        sp_factor = ((-3*(mesh2_J(i).kappa.^2).*(mesh2_J(i).mus)).*(-log(wv_array(i)./1000)));
-    else
-        sa_factor = -3*(mesh_J(i).kappa.^2).*((wv_array(i)./1000).^(-mesh_J(i).sp));
-        sp_factor = ((-3*(mesh_J(i).kappa.^2).*(mesh_J(i).mus)).*(-log(wv_array(i)./1000)));
-    end
-    
-    for ii = 1 : ndata*2
-        J_small(ii,m*nnodes+1:(m+1)*nnodes) = J_kappa(ii,:).*sa_factor';
-        J_small(ii,(m+1)*nnodes+1:(m+2)*nnodes) = J_kappa(ii,:).*sp_factor';
     end
     
     J = [J;J_small];

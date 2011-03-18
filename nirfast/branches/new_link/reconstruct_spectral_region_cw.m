@@ -1,12 +1,11 @@
-function [fwd_mesh,pj_error] = reconstruct_spectral(fwd_mesh,...
-    recon_basis,...
-    frequency,...
-    data_fn,...
-    iteration,...
-    lambda,...
-    output_fn,...
-    filter_n,...
-    wv_array)
+function [fwd_mesh,pj_error] = reconstruct_spectral_cw(fwd_mesh,...
+                                                    recon_basis,...
+                                                    data_fn,...
+                                                    iteration,...
+                                                    lambda,...
+                                                    output_fn,...
+                                                    filter_n,...
+                                                    wv_array)
 
 % [fwd_mesh,pj_error] = reconstruct_spectral(fwd_mesh,...
 %                                            recon_basis,...
@@ -32,12 +31,7 @@ function [fwd_mesh,pj_error] = reconstruct_spectral(fwd_mesh,...
 
 
 tic
-
-% error checking
-if frequency < 0
-    errordlg('Frequency must be nonnegative','NIRFAST Error');
-    error('Frequency must be nonnegative');
-end
+frequency = 0;
 
 %*******************************************************
 % read data - This is the calibrated experimental data or simulated data
@@ -56,25 +50,16 @@ if 2*(m-2) ~= md
     error('data.link does not equal data.paa');
 end
 
-% we need log amplitude and phase in radians
-anom_a = [];
-anom_p = [];
+% we need log amplitude
+anom = [];
 k=1;
 for i = 1:2:md
     data.paa(:,i) = log(data.paa(:,i));
-    foo = data.paa(:,i+1)/180.0*pi;
-    foo(foo<0) = foo(foo<0) + (2*pi);
-    foo(foo>(2*pi)) = foo(foo>(2*pi)) - (2*pi);
-    data.paa(:,i+1) = foo; clear foo
     linki = logical(data_link(:,k+2));
-    anom_a = [anom_a; data.paa(linki,i)];
-    anom_p = [anom_p; data.paa(linki,i+1)];
+    anom = [anom; data.paa(linki,i)];
     k = k+1;
 end
-anom = zeros(length(anom_a)*2,1);
-anom(1:2:end) = anom_a;
-anom(2:2:end) = anom_p;
-clear data anom_a anom_p
+clear data 
 
 % check to ensure wv_array wavelengths match the wavelength list fwd_mesh
 for i = 1:length(wv_array)
@@ -100,10 +85,58 @@ nwv = length(wv_array);
 % extinction coeff for chosen wavelengths
 [junk1,junk2,junk3,E] = calc_mua_mus(fwd_mesh,wv_array);
 clear junk*
-
 %*******************************************************
 % initialize projection error
 pj_error = [];
+
+%*******************************************************
+% If not a workspace variable, load mesh
+if ischar(fwd_mesh)== 1
+    fwd_mesh = load_mesh(fwd_mesh);
+end
+if ~strcmp(fwd_mesh.type,'spec')
+    errordlg('Mesh type is incorrect','NIRFAST Error');
+    error('Mesh type is incorrect');
+end
+if exist('wv_array') == 0
+    wv_array = fwd_mesh.wv;
+end
+fwd_mesh.link = data_link;
+
+% load recon_mesh
+disp('Loading recon basis')
+if ischar(recon_basis)
+    recon_mesh = load_mesh(recon_basis);
+    [fwd_mesh.fine2coarse,...
+        recon_mesh.coarse2fine] = second_mesh_basis(fwd_mesh,recon_mesh);
+elseif isstruct(recon_basis)
+    recon_mesh = recon_basis;
+    [fwd_mesh.fine2coarse,...
+        recon_mesh.coarse2fine] = second_mesh_basis(fwd_mesh,recon_mesh);
+else
+    [fwd_mesh.fine2coarse,recon_mesh] = pixel_basis(recon_basis,fwd_mesh);
+end
+
+% set parameters for second mesh. Jacobian calculation has been modified so
+% that it only calculates Jacobian for second mesh, which is more memory
+% efficient as well as computationally faster
+recon_mesh.type = fwd_mesh.type;
+recon_mesh.link = fwd_mesh.link;
+recon_mesh.source = fwd_mesh.source;
+recon_mesh.meas = fwd_mesh.meas;
+recon_mesh.dimension = fwd_mesh.dimension;
+recon_mesh.wv = fwd_mesh.wv;
+recon_mesh.excoef = fwd_mesh.excoef;
+if recon_mesh.dimension == 2
+    recon_mesh.element_area = ele_area_c(recon_mesh.nodes(:,1:2),...
+        recon_mesh.elements);
+else
+    recon_mesh.element_area = ele_area_c(recon_mesh.nodes,...
+        recon_mesh.elements);
+end
+pixel.support = mesh_support(recon_mesh.nodes,...
+    recon_mesh.elements,...
+    recon_mesh.element_area);
 
 %************************************************
 % Initiate log file
@@ -144,71 +177,60 @@ end
 % log initial guesses
 for i = 1:n_allsol
     if strcmp(all_sol(i,1:3),'S-A')
-        fprintf(fid_log,['Initial Guess ' all_sol(i,:) ' = %d\n'],...
-            fwd_mesh.sa(1));
+%         fprintf(fid_log,['Initial Guess ' all_sol(i,:) ' = %d\n'],...
+%             fwd_mesh.sa(1));
     elseif strcmp(all_sol(i,1:3),'S-P')
-        fprintf(fid_log,['Initial Guess ' all_sol(i,:) ' = %d\n'],...
-            fwd_mesh.sp(1));
+%         fprintf(fid_log,['Initial Guess ' all_sol(i,:) ' = %d\n'],...
+%             fwd_mesh.sp(1));
     else
         fprintf(fid_log,['Initial Guess ' all_sol(i,:) ' = %d\n'],...
             fwd_mesh.conc(1,i));
     end
 end
 
-
-%**************************************************
-% This calculates the mapping matrix that reduces Jacobian from nodal
-% values to regional values
-disp('calculating regions');
-disp('calculating regions');
-if ~exist('region','var')
-    region = unique(fwd_mesh.region);
+% check for input regularization
+if isstruct(lambda) && ~(strcmp(lambda.type,'JJt') || strcmp(lambda.type,'JtJ'))
+    lambda.type = 'Automatic';
 end
-K = region_mapper(fwd_mesh,region);
-[junk,Klength] = size(K);
+if ~isstruct(lambda)
+    lambda.value = lambda;
+    lambda.type = 'Automatic';
+end
+% determine regularization type
+if strcmp(lambda.type, 'Automatic')
+    if size(anom,1)<n_allsol*size(recon_mesh.nodes,1)
+        lambda.type = 'JJt';
+    else
+        lambda.type = 'JtJ';
+    end
+end
 
 % start non-linear itertaion image reconstruction part
 for it = 1:iteration
     
+    % Interpolate fwd_mesh values to recon_mesh
+    [recon_mesh.conc,recon_mesh.sa,recon_mesh.sp] = ...
+        interp2coarse(fwd_mesh,...
+        recon_mesh,...
+        fwd_mesh.conc,...
+        fwd_mesh.sa,...
+        fwd_mesh.sp);
+    
     % Compute Jacobian and ref data from each wavelength data
     disp('---------------------------------');
     disp('Building Jacobian using jacobian_spectral')
-    [J,data,fwd_mesh] = jacobian_spectral(fwd_mesh,frequency,wv_array);
+    [J,data,fwd_mesh] = jacobian_spectral_cw(fwd_mesh,wv_array,recon_mesh);
     
-    nchrom = numel(fwd_mesh.chromscattlist);
-    Jtemp = [];
-    [n1,n2] = size(J);
-    for i=1:1:nchrom
-        Jtemp = [Jtemp J(:,(i-1)*n2/nchrom+1:i*n2/nchrom)*K];
-    end
-    J = Jtemp;
-    
-    %remove NaN padding
-    ind = ~isnan(J(:,1));
-    J = J(ind,:);
-    
-    clear Jtemp;
-    
-    % Read reference data
-    ref_a = [];
-    ref_p = [];
+    % we need log amplitude
+    ref = [];
     k=1;
     for i = 1:2:md
         data.paa(:,i) = log(data.paa(:,i));
-        foo = data.paa(:,i+1)/180.0*pi;
-        foo(foo<0) = foo(foo<0) + (2*pi);
-        foo(foo>(2*pi)) = foo(foo>(2*pi)) - (2*pi);
-        data.paa(:,i+1) = foo; clear foo
         linki = logical(data_link(:,k+2));
-        ref_a = [ref_a; data.paa(linki,i)];
-        ref_p = [ref_p; data.paa(linki,i+1)];
+        ref = [ref; data.paa(linki,i)];
         k = k+1;
     end
-    ref = zeros(length(ref_a)*2,1);
-    ref(1:2:end) = ref_a;
-    ref(2:2:end) = ref_p;
-    clear data ref_a ref_p
-    
+    clear data
     
     % Calculate data difference:
     data_diff = (anom - ref);
@@ -249,79 +271,94 @@ for it = 1:iteration
     
     %*********************************************************************
     % Normalize Jacobian w.r.t different SI units
-    conc_temp = reshape(fwd_mesh.conc, numel(fwd_mesh.conc), 1);
-    
-    N = [];
-    [junk,nchrom] = size(fwd_mesh.conc);
-    for in = 1:nchrom
-        N = [N fwd_mesh.conc(:,in)'*K./sum(K)];
+    conc_temp = reshape(recon_mesh.conc, numel(recon_mesh.conc), 1);
+    N = mean(recon_mesh.conc);
+    nn = length(recon_mesh.nodes);
+    for i = 1 : length(N)
+        J(:,(i-1)*nn+1:i*nn) = J(:,(i-1)*nn+1:i*nn).*N(i);
     end
-    N = [N  fwd_mesh.sa'*K./sum(K)  fwd_mesh.sp'*K./sum(K)];
-    J = J*diag(N);
     
-    %*********************************************************************
     % build hessian
     [nrow,ncol]=size(J);
-    Hess = zeros(nrow);
-    disp('Calculating Hessian');
-    Hess = (J*J');
-    
-    % Add regularisation
-    reg_amp = lambda*max(diag(Hess(1:2:end,1:2:end)));
-    reg_phs = lambda*max(diag(Hess(2:2:end,2:2:end)));
-    reg = ones(nrow,1);
-    reg(1:2:end) = reg(1:2:end).*reg_amp;
-    reg(2:2:end) = reg(2:2:end).*reg_phs;
-    
-    disp(['Amp Regularization        = ' num2str(reg(1))]);
-    disp(['Phs Regularization        = ' num2str(reg(2))]);
-    fprintf(fid_log,'Amp Regularization        = %f\n',reg(1));
-    fprintf(fid_log,'Phs Regularization        = %f\n',reg(2));
-    for i = 1 : length(reg)
-        Hess(i,i) = Hess(i,i)+reg(i);
+    if strcmp(lambda.type, 'JJt')
+        Hess = zeros(nrow);
+        disp('Calculating Hessian');
+        Hess = (J*J');
+        
+        % Add regularisation
+        reg_amp = lambda.value*max(diag(Hess(1:2:end,1:2:end)));
+        % reg_phs = lambda.value*max(diag(Hess(2:2:end,2:2:end)));
+        reg = ones(nrow,1);
+        reg(1:2:end) = reg(1:2:end).*reg_amp;
+        % reg(2:2:end) = reg(2:2:end).*reg_phs;
+        
+        disp(['Amp Regularization        = ' num2str(reg(1))]);
+        % disp(['Phs Regularization        = ' num2str(reg(2))]);
+        fprintf(fid_log,'Amp Regularization        = %f\n',reg(1));
+        % fprintf(fid_log,'Phs Regularization        = %f\n',reg(2));
+        for i = 1 : length(reg)
+            Hess(i,i) = Hess(i,i)+reg(i);
+        end
+        
+        disp('Inverting Hessian');
+        foo = J'*(Hess\data_diff);
+        %foo = J'*minres(Hess,data_diff,1e-5,2000);
+    else
+        Hess = zeros(ncol);
+        disp('Calculating Hessian');
+        Hess = (J'*J);
+        
+        % Add regularisation
+        reg = lambda.value*max(diag(Hess));
+        disp(['Regularization        = ' num2str(reg)]);
+        fprintf(fid_log,'Regularization        = %f\n',reg);
+        reg = reg*diag(ones(length(Hess),1));
+        Hess = Hess+reg;
+        
+        disp('Inverting Hessian');
+        foo = (Hess\J'*data_diff);
+        
     end
-    
-    disp('Inverting Hessian');
-    foo = J'*(Hess\data_diff);
     clear J reg Hess;
     
     %******************************************************
     % Inversion complete, normalize update
-    foo = foo.*N';
-    
-    [nn,nc] = size(fwd_mesh.conc);
-    % use region mapper to unregionize
-    foo_new =[];
-    for i = 1:(2+nc)
-        foo_new = [foo_new; K*foo((i-1)*Klength + 1: i*Klength)];
+    for i = 1 : length(N)
+        foo((i-1)*nn+1:i*nn) = foo((i-1)*nn+1:i*nn).*N(i);
     end
-    foo = foo_new;
+    clear nn N
     
     % Update values
-    [nn,nc] = size(fwd_mesh.conc);
+    [nn,nc] = size(recon_mesh.conc);
     foo_conc = foo(1:nn*nc);
-    foo_sa = foo(nn*nc+1:nn*(nc+1));
-    foo_sp = foo(nn*(nc+1)+1:end);
+%     foo_sa = foo(nn*nc+1:nn*(nc+1));
+%     foo_sp = foo(nn*(nc+1)+1:end);
     
     conc_temp = conc_temp + foo_conc;
-    fwd_mesh.conc = reshape(conc_temp,nn,nc);
-    fwd_mesh.sa = fwd_mesh.sa + foo_sa;
-    fwd_mesh.sp = fwd_mesh.sp + foo_sp;
+    recon_mesh.conc = reshape(conc_temp,nn,nc);
+%     recon_mesh.sa = recon_mesh.sa + foo_sa;
+%     recon_mesh.sp = recon_mesh.sp + foo_sp;
     clear foo foo_conc foo_sa foo_sp conc_temp N
     
-   %% constraining water to be less than 100%, sa and sp <3.0
-  [fwd_mesh.conc, fwd_mesh.sa, fwd_mesh.sp] = ...
-      constrain_val(fwd_mesh, fwd_mesh.conc, ...
-		    fwd_mesh.sa, fwd_mesh.sp, ...
-		    fwd_mesh.chromscattlist);
-  
-  %%filtering
-  if (filter_n ~= 0)
-    disp('Filtering');
-    [fwd_mesh] = mean_filter_chromscatt(fwd_mesh, filter_n);
-  end
-  
-  
+    %% constraining water to be less than 100%, sa and sp <3.0
+    [recon_mesh.conc, recon_mesh.sa, recon_mesh.sp] = ...
+        constrain_val(recon_mesh, recon_mesh.conc, ...
+        recon_mesh.sa, recon_mesh.sp, ...
+        fwd_mesh.chromscattlist);
+    
+    % Interpolate updated values back to fwd_mesh
+    [fwd_mesh.conc] = ...
+        interp2fine(fwd_mesh,...
+        recon_mesh,...
+        recon_mesh.conc);
+    
+    %%filtering
+    if (filter_n ~= 0)
+        disp('Filtering');
+        [fwd_mesh] = mean_filter_chromscatt(fwd_mesh, filter_n);
+    end
+    
+    
     %**********************************************************
     % Compute absorption and scatter coefficients
     % mua From Beer's Law:
@@ -384,6 +421,48 @@ fclose(fid_log);
 %**************************************************************************
 % Selected Sub-functions
 
+function [conc_coarse,sa_coarse,sp_coarse] = interp2coarse(mesh1,mesh2,conc_f,sa_f,sp_f)
+[junk,m] = size(conc_f);
+for  i = 1:length(mesh2.nodes)
+    if mesh1.fine2coarse(i,1) ~= 0
+        for j = 1:m
+            conc_coarse(i,j) = (mesh1.fine2coarse(i,2:end) * ...
+                conc_f(mesh1.elements(mesh1.fine2coarse(i,1),:),j));
+        end
+        sa_coarse(i,1) = (mesh1.fine2coarse(i,2:end) * ...
+            sa_f(mesh1.elements(mesh1.fine2coarse(i,1),:)));
+        sp_coarse(i,1) = (mesh1.fine2coarse(i,2:end) * ...
+            sp_f(mesh1.elements(mesh1.fine2coarse(i,1),:)));
+        
+    elseif mesh1.fine2coarse(i,1) == 0
+        dist = distance(mesh1.nodes,...
+            mesh1.bndvtx,...
+            [mesh2.nodes(i,1:2) 0]);
+        mindist = find(dist==min(dist));
+        mindist = mindist(1);
+        for j = 1:m
+            conc_coarse(i,j) = conc_f(mindist,j);
+        end
+        sa_coarse(i,1) = sa_f(mindist);
+        sp_coarse(i,1) = sp_f(mindist);
+    end
+end
+
+
+function [conc_f] = interp2fine(mesh1,mesh2,conc_coarse)
+[junk,m] = size(conc_coarse);
+for  i = 1:length(mesh1.nodes)
+    for j = 1:m
+        conc_f(i,j) = (mesh2.coarse2fine(i,2:end) * ...
+            conc_coarse(mesh2.elements(mesh2.coarse2fine(i,1),:),j));
+    end
+%     sa_f(i,1) = (mesh2.coarse2fine(i,2:end) * ...
+%         sa_coarse(mesh2.elements(mesh2.coarse2fine(i,1),:)));
+%     sp_f(i,1) = (mesh2.coarse2fine(i,2:end) * ...
+%         sp_coarse(mesh2.elements(mesh2.coarse2fine(i,1),:)));
+end
+
+
 function [conc,sa,sp] = constrain_val(mesh2,conc,sa,sp,list)
 % Constrain water
 list = char(list);
@@ -404,18 +483,18 @@ for i = 1 : nr-2
     end
 end
 
-%%constraining scatt ampl
-index = find(sa > 3.0);
-sa(index) = 3.0;
-clear index;
-index = find(sa < 0.0);
-sa(index) = 0.0001;
-clear index;
-
-%%constraining scatt power
-index = find(sp > 3.0);
-sp(index) = 3.0;
-clear index;
-index = find(sp < 0.0);
-sp(index) = 0.0001;
-clear index;
+% %%constraining scatt ampl
+% index = find(sa > 3.0);
+% sa(index) = 3.0;
+% clear index;
+% index = find(sa < 0.0);
+% sa(index) = 0.0001;
+% clear index;
+% 
+% %%constraining scatt power
+% index = find(sp > 3.0);
+% sp(index) = 3.0;
+% clear index;
+% index = find(sp < 0.0);
+% sp(index) = 0.0001;
+% clear index;
