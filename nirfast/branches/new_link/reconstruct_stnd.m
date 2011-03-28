@@ -37,6 +37,16 @@ if frequency < 0
 end
 
 %*******************************************************
+% If not a workspace variable, load mesh
+if ischar(fwd_mesh)== 1
+  fwd_mesh = load_mesh(fwd_mesh);
+end
+if ~strcmp(fwd_mesh.type,'stnd')
+    errordlg('Mesh type is incorrect','NIRFAST Error');
+    error('Mesh type is incorrect');
+end
+
+%*******************************************************
 % read data - This is the calibrated experimental data or simulated data
 anom = load_data(data_fn);
 if ~isfield(anom,'paa')
@@ -47,27 +57,18 @@ end
 % remove zeroed data
 anom.paa(anom.link(:,3)==0,:) = [];
 data_link = anom.link;
-anom = anom.paa;
 
+anom = anom.paa;
 anom(:,1) = log(anom(:,1)); %take log of amplitude
 anom(:,2) = anom(:,2)/180.0*pi; % phase is in radians and not degrees
 anom(anom(:,2)<0,2) = anom(anom(:,2)<0,2) + (2*pi);
 anom(anom(:,2)>(2*pi),2) = anom(anom(:,2)>(2*pi),2) - (2*pi);
 anom = reshape(anom',length(anom)*2,1); 
 
-%*******************************************************
-% If not a workspace variable, load mesh
-if ischar(fwd_mesh)== 1
-  fwd_mesh = load_mesh(fwd_mesh);
-end
-if ~strcmp(fwd_mesh.type,'stnd')
-    errordlg('Mesh type is incorrect','NIRFAST Error');
-    error('Mesh type is incorrect');
-end
 fwd_mesh.link = data_link;
 clear data
+%*******************************************************
 
-%******************************************************
 % Load or calculate second mesh for reconstruction basis
 if ischar(recon_basis)
   recon_mesh = load_mesh(recon_basis);
@@ -100,6 +101,7 @@ pixel.support = mesh_support(recon_mesh.nodes,...
                              recon_mesh.elements,...
                              recon_mesh.element_area);
 
+
 % check for input regularization
 if isstruct(lambda) && ~(strcmp(lambda.type,'JJt') || strcmp(lambda.type,'JtJ'))
     lambda.type = 'Automatic';
@@ -117,11 +119,11 @@ if strcmp(lambda.type, 'Automatic')
     end
 end
 
-%************************************************************
+%********************************************************
 % Initiate projection error
 pj_error = [];
 
-%************************************************************
+%********************************************************
 % Initiate log file
 fid_log = fopen([output_fn '.log'],'w');
 fprintf(fid_log,'Forward Mesh   = %s\n',fwd_mesh.name);
@@ -142,15 +144,15 @@ fprintf(fid_log,'Output Files   = %s_mua.sol\n',output_fn);
 fprintf(fid_log,'               = %s_mus.sol\n',output_fn);
 fprintf(fid_log,'Initial Guess mua = %d\n',fwd_mesh.mua(1));
 fprintf(fid_log,'Initial Guess mus = %d\n',fwd_mesh.mus(1));
-
+%********************************************************
 % start non-linear itertaion image reconstruction part
 for it = 1 : iteration
   
   % Calculate jacobian
   [J,data]=jacobian_stnd(fwd_mesh,frequency,recon_mesh);
   data.amplitude(data_link(:,3)==0,:) = [];
-  data.phase(data_link(:,3)==0,:) = [];
-
+  data.phase(data_link(:,3)==0,:) = []; 
+  
   % Set jacobian as Phase and Amplitude part instead of complex
   J = J.complete;
 
@@ -162,9 +164,9 @@ for it = 1 : iteration
   ref(ref(:,2)<0,2) = ref(ref(:,2)<0,2) + (2*pi);
   ref(ref(:,2)>(2*pi),2) = ref(ref(:,2)>(2*pi),2) - (2*pi);
   ref = reshape(ref',length(ref)*2,1);
+
   data_diff = (anom-ref);
 
-  % PJ error
   pj_error = [pj_error sum(abs(data_diff.^2))];
  
   disp('---------------------------------');
@@ -204,7 +206,7 @@ for it = 1 : iteration
   
   % Add regularization, which decreases at each iteration
   if it ~= 1
-    lambda.value = lambda.value./10^0.25;
+    %lambda.value = lambda.value./10^0.25;
   end
   
   % build hessian

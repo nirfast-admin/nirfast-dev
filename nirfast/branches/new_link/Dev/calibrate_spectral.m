@@ -4,7 +4,8 @@ function [data,mesh] = calibrate_spectral(homog_data,...
                    mesh_anom,...
         		   frequency,...
         		   iteration,...
-                   nographs)
+                   nographs,...
+                   wv_array)
 
 % [data,mesh] = calibrate_spectral(homog_data,...
 %                   anom_data,...
@@ -30,9 +31,9 @@ function [data,mesh] = calibrate_spectral(homog_data,...
 % data link file will be reference for which data to use.
 
 
-if ~exist('nographs','var')
-    nographs = 0;
-end
+% if ~exist('nographs','var')
+%     nographs = 0;
+% end
 
 % error checking
 if frequency < 0
@@ -57,6 +58,21 @@ if ~isfield(paa_anom,'paa') || ~isfield(paa_anom,'wv')
     errordlg('Data not found or not properly formatted','NIRFAST Error');
     error('Data not found or not properly formatted');
 end
+if exist('wv_array','var')
+    mesh.wv = wv_array;
+    paa_anom_tmp.paa = [];
+    paa_anom_tmp.link = paa_anom.link(:,1:2);
+    paa_anom_tmp.wv = [];
+    for i = 1:length(paa_anom.wv)
+        if any(wv_array==paa_anom.wv(i))
+            paa_anom_tmp.paa = [paa_anom_tmp.paa paa_anom.paa(:,i*2-1:i*2)];
+            paa_anom_tmp.link = [paa_anom_tmp.link paa_anom.link(:,i+2)];
+            paa_anom_tmp.wv = [paa_anom_tmp.wv paa_anom.wv(i)];
+        end
+    end
+end
+paa_anom = paa_anom_tmp; clear paa_anom_tmp;
+mesh_anom.wv = paa_anom.wv;
 mesh.wv = paa_anom.wv;
 mesh.link = paa_anom.link;
 paa_anom = paa_anom.paa;
@@ -72,7 +88,22 @@ end
 
 % load homogeneous data
 paa_homog  = load_data(homog_data);
+if exist('wv_array','var')
+    mesh_homog.wv = wv_array;
+    paa_homog_tmp.paa = [];
+    paa_homog_tmp.link = paa_homog.link(:,1:2);
+    paa_homog_tmp.wv = [];
+    for i = 1:length(paa_homog.wv)
+        if any(wv_array==paa_homog.wv(i))
+            paa_homog_tmp.paa = [paa_homog_tmp.paa paa_homog.paa(:,i*2-1:i*2)];
+            paa_homog_tmp.link = [paa_homog_tmp.link paa_homog.link(:,i+2)];
+            paa_homog_tmp.wv = [paa_homog_tmp.wv paa_homog.wv(i)];
+        end
+    end
+end
+paa_homog = paa_homog_tmp; clear paa_homog_tmp;
 mesh_homog.link = paa_homog.link;
+mesh_homog.wv = paa_homog.wv;
 paa_homog = paa_homog.paa;
 
 % Look for phase wrapping
@@ -167,7 +198,7 @@ end
 
 % set wavelengths array
 data.wv = mesh.wv;
-wv_array = mesh.wv';
+wv_array = data.wv';
 mesh.link = data.link;
 
 [nc,junk] = size(mesh.chromscattlist);
@@ -193,7 +224,7 @@ mesh.sp(:,1) = -p(1);
 mesh.sa(:,1) = exp(p(2));
 
 % generate initial guess if optimization toolbox exists
-if exist('constrain_lsqfi') % it's fit...
+if exist('constrain_lsqfit') % it's fit...
      display('Using Optimization Toolbox');
     [A,b,Aeq,beq,lb,ub]=constrain_lsqfit(nwn,nc);
 

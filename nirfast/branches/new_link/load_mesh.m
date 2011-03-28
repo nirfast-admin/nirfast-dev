@@ -398,39 +398,30 @@ elseif exist([fn '.link']) == 2
         % convert to new
         link = load([fn '.link']);
         [n,m] = size(link);
-        
-        fid = fopen([fn '.link'],'w');
-        fprintf(fid,'%s\n','source detector active');
-        fl = 0;
+        mesh.link = [];
         for i = 1:n
             for j = 1:m
                 if link(i,j) ~= 0
-                    fprintf(fid, '%g %g %g', i, link(i,j), 1);
+                    mesh.link = [mesh.link; i link(i,j), 1];
                     if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
                         for ii=2:length(mesh.wv)
-                            fprintf(fid,' %g',1);
+                            mesh.link = [mesh.link, 1];
                         end
                     end
-                    fprintf(fid,'\n');
                 elseif link(i,j) == 0
-                    fprintf(fid, '%g %g %g', i, 0, 0);
+                    mesh.link = [mesh.link; i link(i,j), 0];
                     if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
                         for ii=2:length(mesh.wv)
-                            fprintf(fid,' %g',0);
+                            mesh.link = [mesh.link, 0];
                         end
                     end
-                    fprintf(fid,'\n');
-                    fl = 1;
                 end
             end
         end
-        fclose(fid);
-        
-    end
-    
-    link = importdata([fn '.link']);
-    mesh.link = link.data;
-    
+    else
+        link = importdata([fn '.link']);
+        mesh.link = link.data;
+    end               
 end
 
 

@@ -145,8 +145,7 @@ for it = 1 : iteration
     
     data_diff = (anom-ref);
     pj_error = [pj_error sum(abs(data_diff.^2))];
-    
-    
+        
     %***********************
     % Screen and Log Info
     
@@ -179,8 +178,7 @@ for it = 1 : iteration
     
     % Interpolate Jacobian onto recon mesh
     [Jm,recon_mesh] = interpolatef2r_fl(fwd_mesh,recon_mesh,Jwholem.completem);
-    %Jm = Jm(1:2:end-1, 1:end/2); % take only intensity portion
-    Jm = Jm(:, 1:end/2);
+    Jm = Jm(:, 1:end/2); % take only intensity portion
     
     % Normalize Jacobian wrt fl source gamma
     Jm = Jm*diag([recon_mesh.gamma]);
@@ -190,13 +188,7 @@ for it = 1 : iteration
         [nrow,ncol]=size(Jm);
         Hess = zeros(nrow);
         Hess = Jm*Jm';
-        
-        % initailize temp Hess, data and mesh, incase PJ increases.
-        Hess_tmp = Hess;
-        mesh_tmp = recon_mesh;
-        data_tmp = data_diff;
-        
-        
+       
         % add regularization
         reg = lambda.value.*(max(diag(Hess)));
         disp(['Regularization Fluor           = ' num2str(reg)]);
@@ -211,12 +203,6 @@ for it = 1 : iteration
         [nrow,ncol]=size(Jm);
         Hess = zeros(ncol);
         Hess = Jm'*Jm;
-        
-        % initailize temp Hess, data and mesh, incase PJ increases.
-        Hess_tmp = Hess;
-        mesh_tmp = recon_mesh;
-        data_tmp = data_diff;
-        
         
         % add regularization
         reg = lambda.value.*(max(diag(Hess)));
@@ -247,7 +233,7 @@ for it = 1 : iteration
         fwd_mesh = mean_filter(fwd_mesh,filter_n);
     end
     
-    plotimage(fwd_mesh,fwd_mesh.eta.*fwd_mesh.muaf);
+    %plotimage(fwd_mesh,fwd_mesh.eta.*fwd_mesh.muaf);
     %**********************************************************
     % Write solution to file
     
@@ -266,6 +252,7 @@ for it = 1 : iteration
     
 end
 fin_it = it-1;
+fclose(fid_log);
 
 %******************************************************
 % Sub functions

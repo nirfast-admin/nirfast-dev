@@ -70,27 +70,27 @@ qvec = spalloc(nnodes,nsource,nsource*100);
 if mesh.dimension == 2
   for i = 1 : nsource
       s_ind = mesh.source.num == source(i);
-    if mesh.source.fwhm(source(i)) == 0
+    if mesh.source.fwhm(s_ind) == 0
         qvec(:,i) = gen_source_point(mesh,mesh.source.coord(s_ind,1:2));
     else
       qvec(:,i) = gen_source(mesh.nodes(:,1:2),...
 			   sort(mesh.elements')',...
 			   mesh.dimension,...
-			   mesh.source.coord(source(i),1:2),...
-			   mesh.source.fwhm(source(i)));
+			   mesh.source.coord(s_ind,1:2),...
+			   mesh.source.fwhm(s_ind));
     end
   end
 elseif mesh.dimension == 3
   for i = 1 : nsource
       s_ind = mesh.source.num == source(i);
-    if mesh.source.fwhm(source(i)) == 0
+    if mesh.source.fwhm(s_ind) == 0
         qvec(:,i) = gen_source_point(mesh,mesh.source.coord(s_ind,1:3));
     else
     qvec(:,i) = gen_source(mesh.nodes,...
 			   sort(mesh.elements')',...
 			   mesh.dimension,...
-			   mesh.source.coord(source(i),:),...
-			   mesh.source.fwhm(source(i)));
+			   mesh.source.coord(s_ind,:),...
+			   mesh.source.fwhm(s_ind));
     end
   end
 end

@@ -181,15 +181,9 @@ for it = 1 : iteration
     [nrow,ncol]=size(Jm);
     Hess = zeros(nrow);
     Hess = Jm'*Jm;
-    
-    % initailize temp Hess, data and mesh, incase PJ increases.
-    Hess_tmp = Hess;
-    mesh_tmp = recon_mesh;
-    data_tmp = data_diff;
-    
-        
+       
     % add regularization
-    reg = lambda.*(max(diag(Hess)));
+    reg = lambda.value.*(max(diag(Hess)));
     disp(['Regularization Fluor           = ' num2str(reg)]);
     fprintf(fid_log,'Regularization Fluor            = %f\n',reg);
     Hess = Hess+(LtL.*reg);
@@ -233,6 +227,7 @@ for it = 1 : iteration
     
 end
 fin_it = it-1;
+fclose(fid_log);
 
 %******************************************************
 % Sub functions

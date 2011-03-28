@@ -34,6 +34,39 @@ tic
 frequency = 0;
 
 %*******************************************************
+% If not a workspace variable, load mesh
+if ischar(fwd_mesh)== 1
+    fwd_mesh = load_mesh(fwd_mesh);
+end
+if ~strcmp(fwd_mesh.type,'spec')
+    errordlg('Mesh type is incorrect','NIRFAST Error');
+    error('Mesh type is incorrect');
+end
+if exist('wv_array') == 0
+    wv_array = fwd_mesh.wv;
+end
+
+% check to ensure wv_array wavelengths match the wavelength list fwd_mesh
+for i = 1:length(wv_array)
+    tmp = find(fwd_mesh.wv == wv_array(i));
+    if isempty(tmp)
+        flag(i) = 0;
+    else
+        flag(i) = tmp(1);
+    end
+end
+tmp = find(flag==0);
+if isempty(tmp) ~= 1
+    for i = 1 : length(tmp)
+        disp(['ERROR: wv_array contains ' num2str(wv_array(tmp(i))) ...
+            'nm which is not present in ' fwd_mesh.name,'.excoef']);
+    end
+    return
+end
+clear tmp flag i
+nwv = length(wv_array);
+
+%*******************************************************
 % read data - This is the calibrated experimental data or simulated data
 disp('Loading data and wavelength information')
 data = load_data(data_fn,wv_array);
@@ -61,48 +94,16 @@ for i = 1:2:md
 end
 clear data 
 
-% check to ensure wv_array wavelengths match the wavelength list fwd_mesh
-for i = 1:length(wv_array)
-    tmp = find(fwd_mesh.wv == wv_array(i));
-    if isempty(tmp)
-        flag(i) = 0;
-    else
-        flag(i) = tmp(1);
-    end
-end
-tmp = find(flag==0);
-if isempty(tmp) ~= 1
-    for i = 1 : length(tmp)
-        disp(['ERROR: wv_array contains ' num2str(wv_array(tmp(i))) ...
-            'nm which is not present in ' fwd_mesh.name,'.excoef']);
-    end
-    return
-end
-clear tmp flag i
-
-nwv = length(wv_array);
-
 % extinction coeff for chosen wavelengths
 [junk1,junk2,junk3,E] = calc_mua_mus(fwd_mesh,wv_array);
 clear junk*
+
+fwd_mesh.link = data_link;
 %*******************************************************
 % initialize projection error
 pj_error = [];
 
 %*******************************************************
-% If not a workspace variable, load mesh
-if ischar(fwd_mesh)== 1
-    fwd_mesh = load_mesh(fwd_mesh);
-end
-if ~strcmp(fwd_mesh.type,'spec')
-    errordlg('Mesh type is incorrect','NIRFAST Error');
-    error('Mesh type is incorrect');
-end
-if exist('wv_array') == 0
-    wv_array = fwd_mesh.wv;
-end
-fwd_mesh.link = data_link;
-
 % load recon_mesh
 disp('Loading recon basis')
 if ischar(recon_basis)

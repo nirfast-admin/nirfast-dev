@@ -97,7 +97,7 @@ omega = 2*pi*frequency*1e6;
 fwd_mesh.gamma = (fwd_mesh.eta.*fwd_mesh.muaf)./(1+(omega.*fwd_mesh.tau).^2);
 
 %*************************************************************
-
+% Calculate region mapper
 disp('calculating regions');
 if ~exist('region','var')
     region = unique(fwd_mesh.region);
@@ -119,7 +119,6 @@ for it = 1 : iteration
 
     data_diff = (anom-ref);
     pj_error = [pj_error sum(abs(data_diff.^2))];
-
 
     %***********************
     % Screen and Log Info
@@ -160,11 +159,6 @@ for it = 1 : iteration
     [nrow,ncol]=size(Jm);
     Hess = zeros(nrow);
     Hess = Jm*Jm';
-
-    % initailize temp Hess, data and mesh, incase PJ increases.
-    Hess_tmp = Hess;
-    data_tmp = data_diff;
-
 
     % add regularization
     reg = lambda.*(max(diag(Hess)));
@@ -211,3 +205,4 @@ for it = 1 : iteration
 
 end
 fin_it = it-1;
+fclose(fid_log);

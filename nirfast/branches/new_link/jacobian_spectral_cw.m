@@ -119,9 +119,7 @@ else
         else
             [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency);
         end
-        
     end
-    
 end
 
 %% Assign outputs

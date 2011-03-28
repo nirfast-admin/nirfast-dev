@@ -217,19 +217,19 @@ end
 
 if nographs == 0
     subplot(2,2,3);
-    plot(lnI(linki),'k');
+    plot(lnI(linki)-lnI_offset(linki),'k');
     hold on
-    plot(femlnI(linki)+lnI_offset(linki),'r--');
+    plot(femlnI(linki),'r--');
     axis tight;
     xlabel('log Amplitude');
-    legend('original','Calibrated');
+    legend('Measured-Offset','Model');
     subplot(2,2,4);
-    plot(phase(linki),'k');
+    plot(phase(linki)-phase_offset(linki),'k');
     hold on
-    plot(femphase(linki)+phase_offset(linki),'r--');
+    plot(femphase(linki),'r--');
     axis tight;
     xlabel('Phase');
-    legend('original','Calibrated');
+    legend('Measured-Offset','Model');
 end
 
 end

@@ -31,6 +31,15 @@ function [fwd_mesh,pj_error] = reconstruct_stnd_cw(fwd_mesh,...
 frequency = 0;
 
 tic;
+%****************************************
+% If not a workspace variable, load mesh
+if ischar(fwd_mesh)== 1
+  fwd_mesh = load_mesh(fwd_mesh);
+end
+if ~strcmp(fwd_mesh.type,'stnd')
+    errordlg('Mesh type is incorrect','NIRFAST Error');
+    error('Mesh type is incorrect');
+end
 
 %*******************************************************
 % read data - This is the calibrated experimental data or simulated data
@@ -41,25 +50,14 @@ if ~isfield(anom,'paa')
 end
 
 % remove zeroed data
-anom.paa(find(anom.link(:,3)==0),:) = [];
+anom.paa(anom.link(:,3)==0,:) = [];
 data_link = anom.link;
 
 anom = anom.paa;
 anom = log(anom(:,1)); %take log of amplitude
-
-%*******************************************************
-
-%****************************************
-% If not a workspace variable, load mesh
-if ischar(fwd_mesh)== 1
-  fwd_mesh = load_mesh(fwd_mesh);
-end
-if ~strcmp(fwd_mesh.type,'stnd')
-    errordlg('Mesh type is incorrect','NIRFAST Error');
-    error('Mesh type is incorrect');
-end
 fwd_mesh.link = data_link;
 
+%*******************************************************
 % Load or calculate second mesh for reconstruction basis
 if ischar(recon_basis)
   recon_mesh = load_mesh(recon_basis);
@@ -108,10 +106,10 @@ if strcmp(lambda.type, 'Automatic')
         lambda.type = 'JtJ';
     end
 end
-
+%*******************************************************
 % Initiate projection error
 pj_error = [];
-
+%*******************************************************
 % Initiate log file
 fid_log = fopen([output_fn '.log'],'w');
 fprintf(fid_log,'Forward Mesh   = %s\n',fwd_mesh.name);
@@ -137,7 +135,7 @@ for it = 1 : iteration
   
   % Calculate jacobian
   [J,data]=jacobian_stnd(fwd_mesh,frequency,recon_mesh);
-  data.amplitude(find(data_link(:,3)==0),:) = [];
+  data.amplitude(data_link(:,3)==0,:) = [];
 
   % Set jacobian as Phase and Amplitude part instead of complex
   J = J.complete;

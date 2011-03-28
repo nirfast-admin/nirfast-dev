@@ -37,6 +37,15 @@ if frequency < 0
     errordlg('Frequency must be nonnegative','NIRFAST Error');
     error('Frequency must be nonnegative');
 end
+%*******************************************************
+% If not a workspace variable, load mesh
+if ischar(fwd_mesh)== 1
+  fwd_mesh = load_mesh(fwd_mesh);
+end
+if ~strcmp(fwd_mesh.type,'stnd')
+    errordlg('Mesh type is incorrect','NIRFAST Error');
+    error('Mesh type is incorrect');
+end
 
 %*******************************************************
 % read data - This is the calibrated experimental data or simulated data
@@ -47,32 +56,24 @@ if ~isfield(anom,'paa')
 end
 
 % remove zeroed data
-anom.paa(find(anom.link(:,3)==0),:) = [];
+anom.paa(anom.link(:,3)==0,:) = [];
 data_link = anom.link;
 
 anom = anom.paa;
 anom(:,1) = log(anom(:,1)); %take log of amplitude
 anom(:,2) = anom(:,2)/180.0*pi; % phase is in radians and not degrees
-anom(find(anom(:,2)<0),2) = anom(find(anom(:,2)<0),2) + (2*pi);
-anom(find(anom(:,2)>(2*pi)),2) = anom(find(anom(:,2)>(2*pi)),2) - (2*pi);
+anom(anom(:,2)<0,2) = anom(anom(:,2)<0,2) + (2*pi);
+anom(anom(:,2)>(2*pi),2) = anom(anom(:,2)>(2*pi),2) - (2*pi);
 anom = reshape(anom',length(anom)*2,1); 
 
-%*******************************************************
-
-%****************************************
-% If not a workspace variable, load mesh
-if ischar(fwd_mesh)== 1
-  fwd_mesh = load_mesh(fwd_mesh);
-end
-if ~strcmp(fwd_mesh.type,'stnd')
-    errordlg('Mesh type is incorrect','NIRFAST Error');
-    error('Mesh type is incorrect');
-end
 fwd_mesh.link = data_link;
+clear data
 
+%********************************************************
 % Initiate projection error
 pj_error = [];
 
+%********************************************************
 % Initiate log file
 fid_log = fopen([output_fn '.log'],'w');
 fprintf(fid_log,'Forward Mesh   = %s\n',fwd_mesh.name);
@@ -87,6 +88,7 @@ fprintf(fid_log,'               = %s_mus.sol\n',output_fn);
 fprintf(fid_log,'Initial Guess mua = %d\n',fwd_mesh.mua(1));
 fprintf(fid_log,'Initial Guess mus = %d\n',fwd_mesh.mus(1));
 
+%********************************************************
 % This calculates the mapping matrix that reduces Jacobian from nodal
 % values to regional values
 disp('calculating regions');
@@ -99,8 +101,10 @@ for it = 1 : iteration
   
   % Calculate jacobian
   [J,data]=jacobian_stnd(fwd_mesh,frequency);
-  data.amplitude(find(data_link(:,3)==0),:) = [];
-  data.phase(find(data_link(:,3)==0),:) = [];
+  data.amplitude(data_link(:,3)==0,:) = [];
+  data.phase(data_link(:,3)==0,:) = [];
+  
+  % Set jacobian as Phase and Amplitude part instead of complex
   J = J.complete;
 
   % reduce J into regions!
@@ -111,8 +115,8 @@ for it = 1 : iteration
   ref(:,1) = log(data.amplitude);
   ref(:,2) = data.phase;
   ref(:,2) = ref(:,2)/180.0*pi;
-  ref(find(ref(:,2)<0),2) = ref(find(ref(:,2)<0),2) + (2*pi);
-  ref(find(ref(:,2)>(2*pi)),2) = ref(find(ref(:,2)>(2*pi)),2) - (2*pi);
+  ref(ref(:,2)<0,2) = ref(ref(:,2)<0,2) + (2*pi);
+  ref(ref(:,2)>(2*pi),2) = ref(ref(:,2)>(2*pi),2) - (2*pi);
   ref = reshape(ref',length(ref)*2,1);
 
   data_diff = (anom-ref);

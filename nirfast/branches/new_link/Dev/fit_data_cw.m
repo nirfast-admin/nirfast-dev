@@ -17,6 +17,11 @@ if ~exist('nographs','var')
     nographs = 0;
 end
 
+frequency = 0;
+if size(data,2) > 1
+    data = data(:,1);
+end
+
 % get an index from link file of data to actually use
 linki = logical(mesh.link(:,3));
 % calculate the source / detector distance for each combination.
@@ -29,10 +34,10 @@ lnI = log(data(:,1));
 
 if nographs == 0
     figure;
+    subplot(2,2,1)
     plot(dist(linki),lnrI(linki),'.')
     ylabel('lnrI');
     xlabel('Source / Detector distance');
-    subplot(2,2,2);
     drawnow
     pause(0.001)
 end
@@ -72,7 +77,7 @@ mesh.mua(:) = mua;
 mesh.kappa = 1./(3*(mesh.mua+mesh.mus));
 
 % Fit for mua and mus using FEM
-dist = dist_orig;
+% dist = dist_orig;
 jj = 0;
 while jj ~= iteration
   [fem_data]=femdata(mesh,frequency);
@@ -80,7 +85,7 @@ while jj ~= iteration
     
   femlnrI = log(fem_data(:,1).*dist);
   
-  alpha0 = polyfit(dist,femlnrI,1); alpha0 = alpha0(1);
+  alpha0 = polyfit(dist(linki),femlnrI(linki),1); alpha0 = alpha0(1);
   
   mesh.mua(:) = mesh.mua(:)+0.0001;
   mesh.kappa = 1./(3*(mesh.mua+mesh.mus));
@@ -144,12 +149,12 @@ end
 
 if nographs == 0
     subplot(2,2,3:4);
-    plot(lnI(linki),'k');
+    plot(lnI(linki)-lnI_offset(linki),'k');
     hold on
-    plot(femlnI(linki)+lnI_offset(linki),'r--');
+    plot(femlnI(linki),'r--');
     axis tight;
     xlabel('log Amplitude');
-    legend('original','Calibrated');
+    legend('Measured-Offset','Model');
 end
 
 end

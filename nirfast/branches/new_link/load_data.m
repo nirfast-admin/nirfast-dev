@@ -47,9 +47,16 @@ if ischar(fn) ~= 0
     end
     
     if strcmp(test(1),'s') == 1
-        data.link = datatemp(:,1:3);
-        datatemp = datatemp(:,4:end);
-        test(1:strfind(test,'active')+5)=[];
+        if isempty(strfind(test,'active')) == 0
+            test(1:strfind(test,'active')+5)=[];
+            data.link = datatemp(:,1:3);
+            datatemp = datatemp(:,4:end);
+        elseif isempty(strfind(test,'w')) == 0
+            foo = strfind(test,'w');
+            test(1:foo(1)-1) = [];
+            data.link = datatemp(:,1:2);
+            datatemp = datatemp(:,3:end);
+        end
         test = test(find(isspace(test)==0):end);
     end
     
@@ -96,23 +103,19 @@ if ischar(fn) ~= 0
         
         
         % SPECTRAL
-    elseif (strcmp(test(end-2),'w') == 1 || strcmp(test(end-3),'w') == 1 || strcmp(test(end-4),'w') == 1)
+    elseif isempty(strfind(test,'w')) == 0
         S = char(text);
-        wloc = findstr(S,'w');
+        wloc = strfind(S,'w');
         for i=1:1:numel(wloc)-1
             data.wv(i) = str2num(strtrim(S(wloc(i)+1:wloc(i+1)-1)));
         end
         data.wv(end+1) = str2num(strtrim(S(wloc(end)+1:end)));
+        
         % finish writing link
-        data.link = [data.link datatemp(:,3:3:end)];
-        % make paa
-        data.paa = datatemp(:,1:2);
-        j=4;
-        for i=3:2:2*numel(wloc)
-           data.paa(:,i:i+1) = datatemp(:,4:5);
-           j = j+1;
-        end
- 
+        data.link = [data.link datatemp(:,1:3:end)];
+        datatemp(:,1:3:end) = [];
+        data.paa = datatemp;
+              
         
         % STANDARD
     else

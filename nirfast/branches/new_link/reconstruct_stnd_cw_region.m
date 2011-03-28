@@ -34,23 +34,6 @@ frequency = 0;
 
 tic;
 
-%*******************************************************
-% read data - This is the calibrated experimental data or simulated data
-anom = load_data(data_fn);
-if ~isfield(anom,'paa')
-    errordlg('Data not found or not properly formatted','NIRFAST Error');
-    error('Data not found or not properly formatted');
-end
-
-% remove zeroed data
-anom.paa(find(anom.link(:,3)==0),:) = [];
-data_link = anom.link;
-
-anom = anom.paa;
-anom = log(anom(:,1)); %take log of amplitude
-
-%*******************************************************
-
 %****************************************
 % If not a workspace variable, load mesh
 if ischar(fwd_mesh)== 1
@@ -60,11 +43,27 @@ if ~strcmp(fwd_mesh.type,'stnd')
     errordlg('Mesh type is incorrect','NIRFAST Error');
     error('Mesh type is incorrect');
 end
-fwd_mesh.link = data_link;
 
+%*******************************************************
+% read data - This is the calibrated experimental data or simulated data
+anom = load_data(data_fn);
+if ~isfield(anom,'paa')
+    errordlg('Data not found or not properly formatted','NIRFAST Error');
+    error('Data not found or not properly formatted');
+end
+
+% remove zeroed data
+anom.paa(anom.link(:,3)==0,:) = [];
+data_link = anom.link;
+
+anom = anom.paa;
+anom = log(anom(:,1)); %take log of amplitude
+fwd_mesh.link = data_link;
+%********************************************************
 % Initiate projection error
 pj_error = [];
 
+%*******************************************************
 % Initiate log file
 fid_log = fopen([output_fn '.log'],'w');
 fprintf(fid_log,'Forward Mesh   = %s\n',fwd_mesh.name);
@@ -76,7 +75,7 @@ fprintf(fid_log,'Filter         = %d\n',filter_n);
 fprintf(fid_log,'Output Files   = %s_mua.sol\n',output_fn);
 fprintf(fid_log,'               = %s_mus.sol\n',output_fn);
 fprintf(fid_log,'Initial Guess mua = %d\n',fwd_mesh.mua(1));
-
+%*******************************************************
 % This calculates the mapping matrix that reduces Jacobian from nodal
 % values to regional values
 disp('calculating regions');
@@ -84,12 +83,12 @@ if ~exist('region','var')
     region = unique(fwd_mesh.region);
 end
 K = region_mapper(fwd_mesh,region);
-
+%*******************************************************
 for it = 1 : iteration
   
   % Calculate jacobian
   [J,data]=jacobian_stnd(fwd_mesh,0);
-  data.amplitude(find(data_link(:,3)==0),:) = [];
+  data.amplitude(data_link(:,3)==0,:) = [];
   J = J.complete;
   
   % reduce J into regions!

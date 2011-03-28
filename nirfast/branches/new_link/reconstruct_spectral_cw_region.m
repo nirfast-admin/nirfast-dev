@@ -34,37 +34,17 @@ tic
 frequency = 0;
 
 %*******************************************************
-% read data - This is the calibrated experimental data or simulated data
-disp('Loading data and wavelength information')
-data = load_data(data_fn);
-% if specified wavelength not available, terminate.
-if isempty(data) || ~isfield(data,'paa')
-    errordlg('Data not found or not properly formatted','NIRFAST Error');
-    error('Data not found or not properly formatted');
+% If not a workspace variable, load mesh
+if ischar(fwd_mesh)== 1
+    fwd_mesh = load_mesh(fwd_mesh);
 end
-[n,m] = size(data.link);  [nd,md] = size(data.paa);
-data_link = data.link;
-
-if 2*(m-2) ~= md
-    errordlg('data.link does not equal data.paa','NIRFAST Error');
-    error('data.link does not equal data.paa');
+if ~strcmp(fwd_mesh.type,'spec')
+    errordlg('Mesh type is incorrect','NIRFAST Error');
+    error('Mesh type is incorrect');
 end
-
-% wv_array is supposed to be optional. Defaults to data.wv
-if ~exist('wv_array')
-    wv_array = data.wv;
+if exist('wv_array') == 0
+    wv_array = fwd_mesh.wv;
 end
-
-% we need log amplitude
-anom = [];
-k=1;
-for i = 1:2:md
-    data.paa(:,i) = log(data.paa(:,i));
-    linki = logical(data_link(:,k+2));
-    anom = [anom; data.paa(linki,i)];
-    k = k+1;
-end
-clear data
 
 % check to ensure wv_array wavelengths match the wavelength list fwd_mesh
 for i = 1:length(wv_array)
@@ -84,29 +64,44 @@ if isempty(tmp) ~= 1
     return
 end
 clear tmp flag i
-
 nwv = length(wv_array);
+
+%*******************************************************
+% read data - This is the calibrated experimental data or simulated data
+disp('Loading data and wavelength information')
+data = load_data(data_fn);
+% if specified wavelength not available, terminate.
+if isempty(data) || ~isfield(data,'paa')
+    errordlg('Data not found or not properly formatted','NIRFAST Error');
+    error('Data not found or not properly formatted');
+end
+[n,m] = size(data.link);  [nd,md] = size(data.paa);
+data_link = data.link;
+
+if 2*(m-2) ~= md
+    errordlg('data.link does not equal data.paa','NIRFAST Error');
+    error('data.link does not equal data.paa');
+end
+
+% we need log amplitude
+anom = [];
+k=1;
+for i = 1:2:md
+    data.paa(:,i) = log(data.paa(:,i));
+    linki = logical(data_link(:,k+2));
+    anom = [anom; data.paa(linki,i)];
+    k = k+1;
+end
+clear data
 
 % extinction coeff for chosen wavelengths
 [junk1,junk2,junk3,E] = calc_mua_mus(fwd_mesh,wv_array);
 clear junk*
+
+fwd_mesh.link = data_link;
 %*******************************************************
 % initialize projection error
 pj_error = [];
-
-%*******************************************************
-% If not a workspace variable, load mesh
-if ischar(fwd_mesh)== 1
-    fwd_mesh = load_mesh(fwd_mesh);
-end
-if ~strcmp(fwd_mesh.type,'spec')
-    errordlg('Mesh type is incorrect','NIRFAST Error');
-    error('Mesh type is incorrect');
-end
-if exist('wv_array') == 0
-    wv_array = fwd_mesh.wv;
-end
-fwd_mesh.link = data_link;
 
 %************************************************
 % Initiate log file

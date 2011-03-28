@@ -126,5 +126,5 @@ data2.complexm(ind,:)=[];
 if omega == 0
     [J] = build_jacobian_cw_fl(mesh,data2,omega);
 else
-    [J] = build_jacobian_fl(mesh,data2,omega);
+    %[J] = build_jacobian_fl(mesh,data2,omega);
 end

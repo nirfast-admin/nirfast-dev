@@ -17,6 +17,7 @@ meas = unique(mesh.link(:,2));
 [ncol,junk] = size(mesh.nodes);
 [nrow] = length(find(mesh.link(:,3)~=0));
 [nsd, msd] = size(mesh.link);
+clear msd junk
 
 J.complex = zeros(nrow,2*ncol);
 J.complete = zeros(nrow*2,ncol*2);
