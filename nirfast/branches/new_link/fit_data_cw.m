@@ -22,11 +22,25 @@ if size(data,2) > 1
     data = data(:,1);
 end
 
+% calculate the source / detector distance for each combination.
+% also make sure that proper sources / detectors are used
+dist = zeros(length(mesh.link),1);
+for i = 1:length(mesh.link)
+    snum = mesh.link(i,1);
+    mnum = mesh.link(i,2);
+    snum = mesh.source.num == snum;
+    mnum = mesh.meas.num == mnum;
+    if sum(snum)==0 || sum(mnum)==0
+        dist(i,1)=0;
+        mesh.link(i,3)=0;
+    else
+        dist(i,1) = sqrt(sum((mesh.source.coord(snum,:) - ...
+        mesh.meas.coord(mnum,:)).^2,2)); 
+    end
+end
+
 % get an index from link file of data to actually use
 linki = logical(mesh.link(:,3));
-% calculate the source / detector distance for each combination.
-dist = sqrt(sum((mesh.source.coord(mesh.link(:,1),:) - ...
-    mesh.meas.coord(mesh.link(:,2),:)).^2,2)); 
 
 % Set lnrI, lnr and phase!
 lnrI = log(data(:,1).*dist);
