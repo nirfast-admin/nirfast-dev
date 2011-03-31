@@ -295,34 +295,35 @@ elseif exist([fn '.source']) == 2
             mesh.source.fwhm = zeros(ns,1);
         end
     end
+    % Check and poistion sources
+    if mesh.source.fixed == 1;
+        disp('Fixed Sources');
+        if mesh.dimension == 2
+            [ind,int_func] = mytsearchn(mesh,mesh.source.coord(:,1:2));
+        elseif mesh.dimension == 3
+            [ind,int_func] = mytsearchn(mesh,mesh.source.coord);
+        end
+        if any(isnan(ind)) == 1
+            errordlg('Source(s) outside the mesh; either move them manually or remove ''fixed'' from the source file','NIRFAST Warning');
+        end
+    elseif mesh.source.fixed == 0;
+        if strcmp(mesh.type,'stnd') == 1 || strcmp(mesh.type,'stnd_spn')
+            mus_eff = mesh.mus;
+        elseif strcmp(mesh.type,'stnd_bem') == 1
+            mus_eff = mesh.mus(1);
+        elseif strcmp(mesh.type,'fluor') || strcmp(mesh.type,'fluor_bem')
+            mus_eff = mesh.musx;
+        elseif strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
+            [mua,mus] = calc_mua_mus(mesh,mesh.wv(1));
+            mus_eff = mus;
+            clear mua mus
+        end
+        disp('Moving Sources');
+        [mesh]=move_source(mesh,mus_eff,3);
+        clear source mus_eff
+    end
 end
-% Check and poistion sources
-if mesh.source.fixed == 1;
-    disp('Fixed Sources');
-    if mesh.dimension == 2
-        [ind,int_func] = mytsearchn(mesh,mesh.source.coord(:,1:2));
-    elseif mesh.dimension == 3
-        [ind,int_func] = mytsearchn(mesh,mesh.source.coord);
-    end
-    if any(isnan(ind)) == 1
-        errordlg('Source(s) outside the mesh; either move them manually or remove ''fixed'' from the source file','NIRFAST Warning');
-    end
-elseif mesh.source.fixed == 0;
-    if strcmp(mesh.type,'stnd') == 1 || strcmp(mesh.type,'stnd_spn')
-        mus_eff = mesh.mus;
-    elseif strcmp(mesh.type,'stnd_bem') == 1
-        mus_eff = mesh.mus(1);
-    elseif strcmp(mesh.type,'fluor') || strcmp(mesh.type,'fluor_bem')
-        mus_eff = mesh.musx;
-    elseif strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
-        [mua,mus] = calc_mua_mus(mesh,mesh.wv(1));
-        mus_eff = mus;
-        clear mua mus
-    end
-    disp('Moving Sources');
-    [mesh]=move_source(mesh,mus_eff,3);
-    clear source mus_eff
-end
+
 
 
 %% Load detector locations
@@ -421,7 +422,7 @@ elseif exist([fn '.link']) == 2
     else
         link = importdata([fn '.link']);
         mesh.link = link.data;
-    end               
+    end
 end
 
 
