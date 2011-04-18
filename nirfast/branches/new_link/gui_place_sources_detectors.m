@@ -251,6 +251,10 @@ content{end+1} = strcat('mesh_tmp.source.num = (1:size(',sources_string,',1))'';
 if ~batch
     evalin('base',content{end});
 end
+content{end+1} = strcat('mesh_tmp.source.fwhm = zeros(size(',sources_string,',1),1)'';');
+if ~batch
+    evalin('base',content{end});
+end
 content{end+1} = strcat('mesh_tmp.source.fixed = 0;');
 if ~batch
     evalin('base',content{end});
