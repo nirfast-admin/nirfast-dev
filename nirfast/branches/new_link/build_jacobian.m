@@ -10,9 +10,13 @@ function J = build_jacobian(mesh,data)
 % mesh is the mesh
 % data is the data
 % J is the resulting Jacobian
-
+ind = mesh.link(:,3)==0;
+foo = mesh.link;
+foo(ind,:)=[]; clear ind
 source = unique(mesh.link(:,1));
-meas = unique(mesh.link(:,2));
+meas = unique(foo(:,2));
+% source = unique(mesh.link(:,1));
+% meas = unique(mesh.link(:,2));
 
 [ncol,junk] = size(mesh.nodes);
 [nrow] = length(find(mesh.link(:,3)~=0));

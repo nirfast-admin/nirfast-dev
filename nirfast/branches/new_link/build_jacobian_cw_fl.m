@@ -8,8 +8,13 @@ function [J] = build_jacobian_cw_fl(mesh,data,omega)
 % data is the data
 % omega is frequency
 
+ind = mesh.link(:,3)==0;
+foo = mesh.link;
+foo(ind,:)=[]; clear ind
 source = unique(mesh.link(:,1));
-meas = unique(mesh.link(:,2));
+meas = unique(foo(:,2));
+% source = unique(mesh.link(:,1));
+% meas = unique(mesh.link(:,2));
 
 [ncol,junk] = size(mesh.nodes);
 [nrow] = length(find(mesh.link(:,3)~=0));
