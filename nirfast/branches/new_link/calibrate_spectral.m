@@ -4,9 +4,8 @@ function [data,mesh] = calibrate_spectral(homog_data,...
                    mesh_anom,...
         		   frequency,...
         		   iteration,...
-                   nographs,...
-                   wv_array)
-tic
+                   nographs)
+
 % [data,mesh] = calibrate_spectral(homog_data,...
 %                   anom_data,...
 %                   mesh_homog,...
@@ -31,9 +30,9 @@ tic
 % data link file will be reference for which data to use.
 
 
-% if ~exist('nographs','var')
-%     nographs = 0;
-% end
+if ~exist('nographs','var')
+    nographs = 0;
+end
 
 % error checking
 if frequency < 0
@@ -58,23 +57,7 @@ if ~isfield(paa_anom,'paa') || ~isfield(paa_anom,'wv')
     errordlg('Data not found or not properly formatted','NIRFAST Error');
     error('Data not found or not properly formatted');
 end
-if exist('wv_array','var')
-    paa_anom_tmp.paa = [];
-    paa_anom_tmp.link = paa_anom.link(:,1:2);
-    paa_anom_tmp.wv = [];
-    excoef_tmp = [];
-    for i = 1:length(paa_anom.wv)
-        if any(wv_array==paa_anom.wv(i))
-            paa_anom_tmp.paa = [paa_anom_tmp.paa paa_anom.paa(:,i*2-1:i*2)];
-            paa_anom_tmp.link = [paa_anom_tmp.link paa_anom.link(:,i+2)];
-            paa_anom_tmp.wv = [paa_anom_tmp.wv paa_anom.wv(i)];
-            a = mesh.wv == paa_anom.wv(i);
-            excoef_tmp = [excoef_tmp; mesh.excoef(a,:)];
-        end
-    end
-    paa_anom = paa_anom_tmp; clear paa_anom_tmp;
-    mesh.excoef = excoef_tmp; clear excoef_tmp;
-end
+
 % set excoef in meshes based on data.wv
 excoef_tmp = [];
 for i = 1:length(paa_anom.wv)
@@ -99,24 +82,6 @@ end
 
 % load homogeneous data
 paa_homog  = load_data(homog_data);
-if exist('wv_array','var')
-    mesh_homog.wv = wv_array;
-    paa_homog_tmp.paa = [];
-    paa_homog_tmp.link = paa_homog.link(:,1:2);
-    paa_homog_tmp.wv = [];
-    excoef_tmp = [];
-    for i = 1:length(paa_homog.wv)
-        if any(wv_array==paa_homog.wv(i))
-            paa_homog_tmp.paa = [paa_homog_tmp.paa paa_homog.paa(:,i*2-1:i*2)];
-            paa_homog_tmp.link = [paa_homog_tmp.link paa_homog.link(:,i+2)];
-            paa_homog_tmp.wv = [paa_homog_tmp.wv paa_homog.wv(i)];
-            a = mesh_homog.wv == paa_homog.wv(i);
-            excoef_tmp = [excoef_tmp; mesh_homog.excoef(a,:)];
-        end
-    end
-   paa_homog = paa_homog_tmp; clear paa_homog_tmp; 
-   mesh_homog.excoef = excoef_tmp; clear excoef_tmp;
-end
 
 mesh_homog.link = paa_homog.link;
 % set excoef in meshes based on data.wv
@@ -247,30 +212,28 @@ mesh.sp(:,1) = -p(1);
 mesh.sa(:,1) = exp(p(2));
 
 % generate initial guess if optimization toolbox exists
-if exist('constrain_lsqfit') % it's fit...
-     display('Using Optimization Toolbox');
-    [A,b,Aeq,beq,lb,ub]=constrain_lsqfit(nwn,nc);
-
-    [C,resnorm,residual,exitflag,output,lambda] = lsqlin(E,mua_big,A,b,Aeq,beq,lb,ub);
-
-
-    if(C(end)==0)
-        % for water recon (no fat)...
-        ub(end) = 0.5;lb(end) = 0.5;
-        [C,resnorm,residual,exitflag,output,lambda] = lsqlin(E,mua_big,A,b,Aeq,beq,lb,ub);
-    end
-    
-    mesh.conc = repmat(C',length(mesh.nodes),1);
-
-    % for scattering parameters
-    x0 = [1.0;1.0];
-    xdata = wv_array./1000;
-
-    [x,resnorm] = lsqcurvefit(@power_fit,x0,xdata,mus_big)
-
-    mesh.sa(:) = x(1);
-    mesh.sp(:) = x(2);
-
-end
-
-toc
+% if exist('constrain_lsqfit') % it's fit...
+%      display('Using Optimization Toolbox');
+%     [A,b,Aeq,beq,lb,ub]=constrain_lsqfit(nwn,nc);
+% 
+%     [C,resnorm,residual,exitflag,output,lambda] = lsqlin(E,mua_big,A,b,Aeq,beq,lb,ub);
+% 
+% 
+%     if(C(end)==0)
+%         % for water recon (no fat)...
+%         ub(end) = 0.5;lb(end) = 0.5;
+%         [C,resnorm,residual,exitflag,output,lambda] = lsqlin(E,mua_big,A,b,Aeq,beq,lb,ub);
+%     end
+%     
+%     mesh.conc = repmat(C',length(mesh.nodes),1);
+% 
+%     % for scattering parameters
+%     x0 = [1.0;1.0];
+%     xdata = wv_array./1000;
+% 
+%     [x,resnorm] = lsqcurvefit(@power_fit,x0,xdata,mus_big)
+% 
+%     mesh.sa(:) = x(1);
+%     mesh.sp(:) = x(2);
+% 
+% end
