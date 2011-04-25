@@ -403,19 +403,21 @@ elseif exist([fn '.link']) == 2
         for i = 1:n
             for j = 1:m
                 if link(i,j) ~= 0
-                    mesh.link = [mesh.link; i link(i,j), 1];
+                    temp = [i link(i,j), 1];
                     if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
                         for ii=2:length(mesh.wv)
-                            mesh.link = [mesh.link, 1];
+                            temp = [temp, 1];
                         end
                     end
+                    mesh.link = [mesh.link; temp];
                 elseif link(i,j) == 0
-                    mesh.link = [mesh.link; i link(i,j), 0];
+                    temp = [i link(i,j), 0];
                     if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
                         for ii=2:length(mesh.wv)
-                            mesh.link = [mesh.link, 0];
+                            temp = [temp, 0];
                         end
                     end
+                    mesh.link = [mesh.link; temp];
                 end
             end
         end
