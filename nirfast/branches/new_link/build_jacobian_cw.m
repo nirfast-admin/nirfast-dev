@@ -14,7 +14,7 @@ function [J] = build_jacobian_cw(mesh,data)
 ind = mesh.link(:,3)==0;
 foo = mesh.link;
 foo(ind,:)=[]; clear ind
-source = unique(mesh.link(:,1));
+source = unique(foo(:,1));
 meas = unique(foo(:,2));
 % source = unique(mesh.link(:,1));
 % meas = unique(mesh.link(:,2));
