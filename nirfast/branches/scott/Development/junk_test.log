@@ -1,0 +1,6 @@
+Forward Mesh   = C:\NewNirfast\meshes\fl\circle2000_86_fl
+Frequency      = 0.000000 MHz
+Initial Regularization  = 10
+Filtering        = 0
+Output Files   = junk_test_etamuaf.solInitial Guess muaf = 1.830340e-003
+
