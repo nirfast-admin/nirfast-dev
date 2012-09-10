@@ -15,9 +15,9 @@ function [ind, int_func] = mytsearchn(mesh,coord)
 
 if isfield(mesh,'type') && ...
         (strcmp(mesh.type,'stnd_bem') || strcmp(mesh.type,'fluor_bem') || strcmp(mesh.type,'spec_bem'))
-    
+
     [ind, int_func] = mytsearchn_bem(mesh,coord);
-    
+
 else
 
     if mesh.dimension == 2
@@ -79,8 +79,53 @@ else
 
     elseif mesh.dimension == 3
 
-        [N,junk] = size(coord);
+        N = size(coord,1);
         ind = NaN(N,1); int_func = NaN(N,4);
+        
+        % Consider a neighbourhood around query points (coord) with a
+        % radius of 2*max edge length in the given mesh
+        [edge_avg edge_sizes] = GetEdgeSize(mesh.elements, mesh.nodes, 4, 0);
+        delta = 1.1 * max(edge_sizes);
+        tic
+        for i=1:N
+            clear bf
+            bf1 = abs(coord(i,1) - mesh.nodes(:,1)) < delta & ...
+                abs(coord(i,2) - mesh.nodes(:,2)) < delta & ...
+                abs(coord(i,3) - mesh.nodes(:,3)) < delta;
+            if sum(bf1) == 0, continue; end
+            dist = dist2(coord(i,:), mesh.nodes(bf1,:));
+            [sorted idx] = sort(dist, 'ascend');
+            nn = find(bf1);
+            tf = ismember(mesh.elements, nn(idx(1:min(10,length(idx)))));
+            r = find(sum(tf,2));
+            bf2 = inside_tetrahedron_vectorized(coord(i,:), ...
+                mesh.elements(r,:), mesh.nodes);
+            if sum(bf2) == 0, continue; end
+            if sum(bf2) > 1
+                warning('nirfast:mytsearch',...
+                    ' Some of nodes are within more thatn one element!\nCheck your mesh!');
+            end
+            idx = r(bf2);
+            % In case the node lied within more than one tet! In a valid
+            % FEM mesh this should only happen if coord(i,:) is on
+            % edge/face of multiple elements
+            idx = idx(1);
+            ind(i) = idx;
+            P = mesh.nodes(mesh.elements(idx,1),:);
+            Q = mesh.nodes(mesh.elements(idx,2),:);
+            R = mesh.nodes(mesh.elements(idx,3),:);
+            S = mesh.nodes(mesh.elements(idx,4),:);
+            % Calculate barycentric coordinate of coord in
+            % triangular element:  This is the integrating function.
+            A  = [P' Q' R' S'];
+            A(end+1,:) = [1 1 1 1];
+%             A = [P(1) Q(1) R(1) S(1); P(2) Q(2) R(2) S(2);...
+%                 P(3) Q(3) R(3) S(3); 1 1 1 1];
+            b = [coord(i,1); coord(i,2); coord(i,3); 1];
+            int_func(i,:) = (A\b)';
+        end
+        toc
+        tic
         for i = 1:N
 
             % determine distance of all nodes to coord.  This applies to source
@@ -116,8 +161,8 @@ else
                 while true == 0 && k <= n
                     % To make the syntax a little easier to read, define points P, Q, R, S
                     %   - vertices of the tetrahedron which we are testing
-                    P = mesh.nodes(foo(k,1),1:3); 
-                    Q = mesh.nodes(foo(k,2),1:3); 
+                    P = mesh.nodes(foo(k,1),1:3);
+                    Q = mesh.nodes(foo(k,2),1:3);
                     R = mesh.nodes(foo(k,3),1:3);
                     S = mesh.nodes(foo(k,4),1:3);
 
@@ -138,6 +183,7 @@ else
                 j=j+1;
             end
         end
+        toc
 
     end
 
