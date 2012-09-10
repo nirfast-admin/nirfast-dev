@@ -21,6 +21,15 @@ if ischar(mesh)== 1
   mesh = load_mesh(mesh);
 end
 
+%% Node-to-Elmeent connectivity graph
+% Calculate this once to boost speed of tsearch significantly
+if ~isfield(mesh,'node2ele_graph') || ...
+        size(mesh.nodes,1) ~= length(mesh.node2ele_graph)
+    mesh.node2ele_graph = ...
+        GetListofConnectedTetsToNodes(mesh.elements, mesh.nodes, 0);
+end
+global gensource_count
+%%
 % Select femdata program based on mesh.type
 if strcmp(mesh.type,'stnd') == 1        % Use stnd NIRFAST, non-spectral mesh
   data = femdata_stnd(mesh,frequency);

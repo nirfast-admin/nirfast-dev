@@ -483,3 +483,10 @@ if ~strcmp(mesh.type,'stnd_bem') && ~strcmp(mesh.type,'fluor_bem') && ~strcmp(me
             mesh.element_area);
     end
 end
+
+%% Node-to-Elmeent connectivity graph
+if ~isfield(mesh,'node2ele_graph') || ...
+        size(mesh.nodes,1) ~= length(mesh.node2ele_graph)
+    mesh.node2ele_graph = ...
+        GetListofConnectedTetsToNodes(mesh.elements, mesh.nodes, 0);
+end

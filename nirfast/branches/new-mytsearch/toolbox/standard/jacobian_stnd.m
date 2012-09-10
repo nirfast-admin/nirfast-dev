@@ -81,6 +81,8 @@ source = unique(foo(:,1));
 nsource = length(source);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+global gensource_count
+
 %[nsource,junk]=size(source);
 qvec = spalloc(nnodes,nsource,nsource*100);
 if mesh.dimension == 2
@@ -100,6 +102,7 @@ elseif mesh.dimension == 3
     for i = 1 : nsource
         s_ind = mesh.source.num == source(i);
         if mesh.source.fwhm(s_ind) == 0
+            gensource_count = gensource_count + 1;
             qvec(:,i) = gen_source_point(mesh,mesh.source.coord(s_ind,1:3));
         else
             qvec(:,i) = gen_source(mesh.nodes,...
