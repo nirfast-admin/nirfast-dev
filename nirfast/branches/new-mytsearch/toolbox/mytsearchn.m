@@ -78,15 +78,19 @@ else
         end
 
     elseif mesh.dimension == 3
-        newmethod = 0;
+        newmethod = 1;
         N = size(coord,1);
-        if newmethod
         ind = NaN(N,1); int_func = NaN(N,4);
-        
+        if newmethod
         % Consider a neighbourhood around query points (coord) with a
         % radius of 2*max edge length in the given mesh
             tic
-            [~, edge_sizes] = GetEdgeSize(mesh.elements, mesh.nodes, 4, 0);
+            if ~isfield(mesh,'element_edge_sizes')
+                [~, edge_sizes] = GetEdgeSize(mesh.elements, mesh.nodes,...
+                    4, 0);
+            else
+                edge_sizes = mesh.element_edge_sizes;
+            end
             if ~isfield(mesh,'node2ele_graph') || ...
                     size(mesh.nodes,1) ~= length(mesh.node2ele_graph)
                 mesh.node2ele_graph = ...
@@ -119,11 +123,11 @@ else
                 mesh.elements(r,:), mesh.nodes);
             if sum(bf2) == 0, continue; end
             if sum(bf2) > 1
-                warning('nirfast:mytsearch',...
-                    ' Some of nodes are within more thatn one element!\nCheck your mesh!');
+%                 warning('nirfast:mytsearch',...
+%                     ' Some of nodes are within more thatn one element!\nCheck your mesh!');
             end
                 idx = eleid(bf2);
-            % In case the node lied within more than one tet! In a valid
+            % In case the node lies within more than one tet! In a valid
             % FEM mesh this should only happen if coord(i,:) is on
             % edge/face of multiple elements
             idx = idx(1);

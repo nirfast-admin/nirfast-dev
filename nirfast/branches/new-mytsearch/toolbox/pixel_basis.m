@@ -100,15 +100,18 @@ end
 % remove bad elements delaunay used to fix convexity
 badelems = zeros(size(pixel.elements,1),1);
 for elem=1:size(pixel.elements,1)
-    combos = nchoosek(pixel.elements(elem,:),2);
-    for edg=1:size(combos,1)
-        a = pixel.nodes(combos(edg,1),:)';
-        b = pixel.nodes(combos(edg,2),:)';
-        aa=sum(a.*a,1); bb=sum(b.*b,1); ab=a'*b; 
-        d = sqrt(abs(repmat(aa',[1 size(bb,2)]) + repmat(bb,[size(aa,2) 1]) - 2*ab));
-        if d > edge_max
-            badelems(elem) = 1;
-        end
+    if size(pixel.elements,2) == 4
+    edges = [pixel.elements(elem, [1 2]); pixel.elements(elem, [1 3]); ...
+        pixel.elements(elem, [1 4]); pixel.elements(elem, [2 3]); ...
+        pixel.elements(elem, [2 4]); pixel.elements(elem, [3 4])];
+    elseif size(pixel.elements,2) == 3
+        edges = [pixel.elements(elem,[1 2]); pixel.elements(elem,[1 3]);...
+            pixel.elements(elem,[2 3])];
+    end
+    d = sqrt(sum((pixel.nodes(edges(:,2),:) - ...
+                  pixel.nodes(edges(:,1),:)).^2,2));
+    if any(d > edge_max)
+        badelems(elem) = 1;
     end
 end
 pixel.elements(badelems==1,:) = [];

@@ -134,7 +134,7 @@ fprintf(fid_log,'Initial Guess mua = %d\n',fwd_mesh.mua(1));
 for it = 1 : iteration
   
   % Calculate jacobian
-  [J,data]=jacobian_stnd(fwd_mesh,frequency,recon_mesh);
+  [J,data,fwd_mesh]=jacobian_stnd(fwd_mesh,frequency,recon_mesh);
   data.amplitude(data_link(:,3)==0,:) = [];
 
   % Set jacobian as Phase and Amplitude part instead of complex

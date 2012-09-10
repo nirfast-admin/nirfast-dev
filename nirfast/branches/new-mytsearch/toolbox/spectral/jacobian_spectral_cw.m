@@ -102,9 +102,11 @@ if parallel
     parfor i = 1:nwv
         
         if mesh_basis
-            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency,mesh2_J(i));
+            [J_tmp(i),data_tmp(i),mesh_J(i)]=jacobian_stnd(mesh_J(i), ...
+                frequency,mesh2_J(i));
         else
-            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency);
+            [J_tmp(i),data_tmp(i),mesh_J(i)]=jacobian_stnd(mesh_J(i), ...
+                frequency);
         end
         
     end
@@ -115,9 +117,11 @@ else
     for i = 1:nwv
         disp(['Calculating Jacobian for ', num2str(mesh.wv(i)),'nm']);
         if mesh_basis
-            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency,mesh2_J(i));
+            [J_tmp(i),data_tmp(i),mesh_J(i)]=jacobian_stnd(mesh_J(i), ...
+                frequency,mesh2_J(i));
         else
-            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency);
+            [J_tmp(i),data_tmp(i),mesh_J(i)]=jacobian_stnd(mesh_J(i), ...
+                frequency);
         end
     end
 end

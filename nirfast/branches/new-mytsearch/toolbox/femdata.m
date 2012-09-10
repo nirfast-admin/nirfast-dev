@@ -23,8 +23,8 @@ end
 
 %% Node-to-Elmeent connectivity graph
 % Calculate this once to boost speed of tsearch significantly
-if ~isfield(mesh,'node2ele_graph') || ...
-        size(mesh.nodes,1) ~= length(mesh.node2ele_graph)
+if mesh.dimension == 3 && (~isfield(mesh,'node2ele_graph') || ...
+        size(mesh.nodes,1) ~= length(mesh.node2ele_graph))
     mesh.node2ele_graph = ...
         GetListofConnectedTetsToNodes(mesh.elements, mesh.nodes, 0);
 end

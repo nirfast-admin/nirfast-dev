@@ -87,7 +87,7 @@ K = region_mapper(fwd_mesh,region);
 for it = 1 : iteration
   
   % Calculate jacobian
-  [J,data]=jacobian_stnd(fwd_mesh,0);
+  [J,data,fwd_mesh]=jacobian_stnd(fwd_mesh,0);
   data.amplitude(data_link(:,3)==0,:) = [];
   J = J.complete;
   

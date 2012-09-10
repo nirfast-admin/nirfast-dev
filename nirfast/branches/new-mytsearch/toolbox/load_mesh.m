@@ -23,10 +23,10 @@ mesh.name = fn;
 
 
 %% Read mesh nodes
-if exist([fn '.node']) == 0
+if exist([fn '.node'],'file') == 0
     errordlg('.node file is not present','NIRFAST Error');
     error([fn '.node file is not present']);
-elseif exist([fn '.node']) == 2
+elseif exist([fn '.node'],'file') == 2
     mesh.nodes = load(strcat(fn, '.node'));
     mesh.bndvtx = mesh.nodes(:,1); %sets 1 if boundary node, 0 if internal
     mesh.nodes = mesh.nodes(:,2:end);
@@ -35,12 +35,12 @@ end
 
 %% Read appriopriate mesh parameters
 
-if exist([fn '.param']) == 0
+if exist([fn '.param'],'file') == 0
     errordlg('.param file is not present','NIRFAST Error');
     error('.param file is not present');
     
     % Loading up mesh parameters from fn.param
-elseif exist([fn '.param']) == 2
+elseif exist([fn '.param'],'file') == 2
     
     param = importdata([fn '.param']);
     
@@ -194,10 +194,10 @@ end
 
 
 %% Read mesh element
-if exist([fn '.elem']) == 0
+if exist([fn '.elem'],'file') == 0
     errordlg('.elem file is not present','NIRFAST Error');
     error('.elem file is not present');
-elseif exist([fn '.elem']) == 2
+elseif exist([fn '.elem'],'file') == 2
     mesh.elements = load(strcat(fn, '.elem'));
     [junk,dim]=size(mesh.elements);
     if strcmp(mesh.type,'stnd_bem') || strcmp(mesh.type,'fluor_bem') || strcmp(mesh.type,'spec_bem')
@@ -212,9 +212,9 @@ end
 
 
 %% Region file
-if exist([fn '.region']) ~= 0
+if exist([fn '.region'],'file') ~= 0
     mesh.region = load(strcat(fn, '.region'));
-elseif exist([fn '.region']) ~= 2
+elseif exist([fn '.region'],'file') ~= 2
     mesh.region = zeros(length(mesh.nodes),1);
 end
 
@@ -238,10 +238,58 @@ if mesh.dimension == 2
     mesh.elements = check_element_orientation_2d(mesh.elements,mesh.nodes);
 end
 
+
+%% Load link list for source and detector
+if exist([fn '.link'],'file') == 0
+    disp([fn '.link file is not present']);
+elseif exist([fn '.link'],'file') == 2
+    
+    % determine if link file is legacy format
+    fid = fopen([fn '.link']);
+    junk = fgetl(fid);
+    fclose(fid);
+    if ~strcmp(junk(1),'s')
+        
+        % convert to new
+        link = load([fn '.link']);
+        [n,m] = size(link);
+        mesh.link = [];
+        for i = 1:n
+            for j = 1:m
+                if link(i,j) ~= 0
+                    temp = [i link(i,j), 1];
+                    if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
+                        for ii=2:length(mesh.wv)
+                            temp = [temp, 1];
+                        end
+                    end
+                    mesh.link = [mesh.link; temp];
+                elseif link(i,j) == 0
+                    temp = [i link(i,j), 0];
+                    if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
+                        for ii=2:length(mesh.wv)
+                            temp = [temp, 0];
+                        end
+                    end
+                    mesh.link = [mesh.link; temp];
+                end
+            end
+        end
+    else
+        link = importdata([fn '.link']);
+        mesh.link = link.data;
+        if isfield(mesh,'wv') ~= 0
+            if size(mesh.link,2) < length(mesh.wv)+2
+                mesh.link(:,end+1:length(mesh.wv)+2) = 1;
+            end
+        end
+    end
+end
+
 %% Load source locations
-if exist([fn '.source']) == 0
+if exist([fn '.source'],'file') == 0
     disp([fn '.source file is not present']);
-elseif exist([fn '.source']) == 2
+elseif exist([fn '.source'],'file') == 2
     mesh.source.distributed = 0;
     source = importdata([fn '.source']);
     
@@ -336,9 +384,9 @@ end
 
 
 %% Load detector locations
-if exist([fn '.meas']) == 0
+if exist([fn '.meas'],'file') == 0
     disp([fn '.meas file is not present']);
-elseif exist([fn '.meas']) == 2
+elseif exist([fn '.meas'],'file') == 2
     meas = importdata([fn '.meas']);
     
     if isfield(meas,'textdata') == 0
@@ -393,57 +441,8 @@ elseif exist([fn '.meas']) == 2
     clear meas
 end
 
-
-%% Load link list for source and detector
-if exist([fn '.link']) == 0
-    disp([fn '.link file is not present']);
-elseif exist([fn '.link']) == 2
-    
-    % determine if link file is legacy format
-    fid = fopen([fn '.link']);
-    junk = fgetl(fid);
-    fclose(fid);
-    if ~strcmp(junk(1),'s')
-        
-        % convert to new
-        link = load([fn '.link']);
-        [n,m] = size(link);
-        mesh.link = [];
-        for i = 1:n
-            for j = 1:m
-                if link(i,j) ~= 0
-                    temp = [i link(i,j), 1];
-                    if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
-                        for ii=2:length(mesh.wv)
-                            temp = [temp, 1];
-                        end
-                    end
-                    mesh.link = [mesh.link; temp];
-                elseif link(i,j) == 0
-                    temp = [i link(i,j), 0];
-                    if strcmp(mesh.type,'spec') || strcmp(mesh.type,'spec_bem')
-                        for ii=2:length(mesh.wv)
-                            temp = [temp, 0];
-                        end
-                    end
-                    mesh.link = [mesh.link; temp];
-                end
-            end
-        end
-    else
-        link = importdata([fn '.link']);
-        mesh.link = link.data;
-        if isfield(mesh,'wv') ~= 0
-            if size(mesh.link,2) < length(mesh.wv)+2
-                mesh.link(:,end+1:length(mesh.wv)+2) = 1;
-            end
-        end
-    end
-end
-
-
 %% Load identidity list if exists for the internal RI boundary nodes
-if exist([fn '.ident']) == 2
+if exist([fn '.ident'],'file') == 2
     mesh.ident = load(strcat(fn, '.ident'));
 end
 
@@ -469,7 +468,8 @@ end
 
 
 %% area of each element
-if ~strcmp(mesh.type,'stnd_bem') && ~strcmp(mesh.type,'fluor_bem') && ~strcmp(mesh.type,'spec_bem')
+if ~strcmp(mesh.type,'stnd_bem') && ~strcmp(mesh.type,'fluor_bem') && ...
+        ~strcmp(mesh.type,'spec_bem')
     if mesh.dimension == 2
         mesh.element_area = ele_area_c(mesh.nodes(:,1:2),...
             mesh.elements);
@@ -485,8 +485,30 @@ if ~strcmp(mesh.type,'stnd_bem') && ~strcmp(mesh.type,'fluor_bem') && ~strcmp(me
 end
 
 %% Node-to-Elmeent connectivity graph
-if ~isfield(mesh,'node2ele_graph') || ...
-        size(mesh.nodes,1) ~= length(mesh.node2ele_graph)
+if mesh.dimension== 3 && (~isfield(mesh,'node2ele_graph') || ...
+        size(mesh.nodes,1) ~= length(mesh.node2ele_graph))
     mesh.node2ele_graph = ...
         GetListofConnectedTetsToNodes(mesh.elements, mesh.nodes, 0);
 end
+
+%% sizes of all edges in the mesh (needed for mytsearch0
+if ~isfield(mesh,'element_edge_sizes')
+    [junk, mesh.element_edge_sizes] = GetEdgeSize(mesh.elements, ...
+        mesh.nodes, size(mesh.elements,2), 0);
+else
+    % See if we need to redo edge computation
+    if size(mesh.elements,2) == 3
+        edges=[mesh.elements(:,[1 2]); mesh.elements(:,[1 3]); ...
+            mesh.elements(:,[2 3])];
+    elseif size(mesh.elements,2) == 4
+        edges=[mesh.elements(:,[1 2]); mesh.elements(:,[1 3]); ...
+            mesh.elements(:,[1 4]); mesh.elements(:,[2 3]); ...
+            mesh.elements(:,[2 4]); mesh.elements(:,[3 4]);];
+    end
+    edges = unique(sort(edges,2),'rows');
+    if size(edges,1) ~= size(mesh.element_edge_sizes,1)
+        [junk, mesh.element_edge_sizes] = GetEdgeSize(mesh.elements, ...
+            mesh.nodes, size(mesh.elements,2), 0);
+    end
+end
+

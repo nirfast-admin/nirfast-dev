@@ -100,7 +100,7 @@ K = region_mapper(fwd_mesh,region);
 for it = 1 : iteration
   
   % Calculate jacobian
-  [J,data]=jacobian_stnd(fwd_mesh,frequency);
+  [J,data,fwd_mesh]=jacobian_stnd(fwd_mesh,frequency);
   data.amplitude(data_link(:,3)==0,:) = [];
   data.phase(data_link(:,3)==0,:) = [];
   

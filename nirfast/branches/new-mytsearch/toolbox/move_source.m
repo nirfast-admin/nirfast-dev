@@ -156,6 +156,13 @@ if failed == 1
     errordlg('Source(s) could not be moved. The mesh structure may be poor.','Nirfast Warning');
 end
 
+if mesh.dimension == 3
+    mesh.force_qvec_compute = 1;
+    mesh.source.qvec = {};
+    [qvec mesh] = compute_qvec(mesh);
+    mesh = rmfield(mesh,'force_qvec_compute');
+end
+
 if remove_last
     mesh.source.coord(:,end) = [];
 end

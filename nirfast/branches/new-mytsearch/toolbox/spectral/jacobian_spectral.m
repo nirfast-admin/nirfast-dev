@@ -29,7 +29,7 @@ if frequency < 0
     error('Frequency must be nonnegative');
 end
 
-if exist('wv_array') == 1
+if exist('wv_array','var') == 1
     %wv_array = sort(wv_array);
     % check to ensure wv_array wavelengths match the wavelength list fwd_mesh
     for i = 1:length(wv_array)
@@ -101,9 +101,11 @@ if parallel
     parfor i = 1:nwv
         
         if mesh_basis
-            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency,mesh2_J(i));
+            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i), ...
+                frequency,mesh2_J(i));
         else
-            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency);
+            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i), ...
+                frequency);
         end
         
     end
@@ -114,9 +116,11 @@ else
     for i = 1:nwv
         disp(['Calculating Jacobian for ', num2str(mesh.wv(i)),'nm']);
         if mesh_basis
-            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency,mesh2_J(i));
+            [J_tmp(i),data_tmp(i),mesh_J(i)]=jacobian_stnd(mesh_J(i), ...
+                frequency,mesh2_J(i));
         else
-            [J_tmp(i),data_tmp(i)]=jacobian_stnd(mesh_J(i),frequency);
+            [J_tmp(i),data_tmp(i),mesh_J(i)]=jacobian_stnd(mesh_J(i), ...
+                frequency);
         end
     end
 end
